@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Empório da Música · Atendimento</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">♪</span><span>EMPÓRIO<br>DA MÚSICA</span></div>
+      <div class="sidebar-bottom">
+        <div class="rule"></div>
+        <p class="eyebrow">ATENDIMENTO</p>
+        <p class="sidebar-copy">Sua música começa aqui.</p>
+        <p class="sidebar-note">Assistente virtual para instrumentos, pedidos e políticas da loja.</p>
+      </div>
+    </aside>
+    <main class="workspace">
+      <header class="topbar"><span>Conversa</span><span class="status"><span class="status-dot"></span> Protótipo</span></header>
+      <section class="conversation" aria-label="Conversa com o assistente">
+        <div id="messages" class="messages" aria-live="polite">
+          <div class="message assistant intro"><span class="speaker">EMPÓRIO</span><p>Oi! Sou o assistente virtual da Empório da Música. Posso ajudar a encontrar um instrumento, consultar um pedido ou explicar as políticas da loja.</p></div>
+        </div>
+        <div id="suggestions" class="suggestions" aria-label="Perguntas sugeridas">
+          <button type="button" data-prompt="Quais violões vocês têm em estoque por até R$ 1.000?">Violões até R$ 1.000 <span>↗</span></button>
+          <button type="button" data-prompt="O ukulele Ohana CK-20 está em promoção? E no PIX?">Promoção e PIX <span>↗</span></button>
+          <button type="button" data-prompt="Comprei online e me arrependi. Posso devolver?">Devolução online <span>↗</span></button>
+        </div>
+      </section>
+      <form id="chat-form" class="composer">
+        <label for="message-input" class="sr-only">Sua mensagem</label>
+        <textarea id="message-input" rows="1" maxlength="2000" placeholder="Pergunte sobre instrumentos, pedidos ou políticas…" required></textarea>
+        <button id="send-button" type="submit" aria-label="Enviar mensagem">Enviar <span aria-hidden="true">↗</span></button>
+      </form>
+      <p class="disclaimer">Dados de demonstração. Preços, estoque e pedidos vêm de uma base estática, sem atualização ao vivo.</p>
+    </main>
+  </div>
+</body>
+</html>
