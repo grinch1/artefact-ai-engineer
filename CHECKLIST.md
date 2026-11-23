@@ -27,7 +27,8 @@ Updated: 23 November 2026. `[x]` means verified, `[ ]` means open. Items marked 
 - [x] Document environment setup and commands for API, CLI, tests, and Docker.
 - [x] Document known limitations and what to improve with more time.
 - [x] Disclose use of Codex as a coding assistant and the candidate's review responsibility.
-- [ ] **Partial:** Run the documented steps from a fresh clone with the case data mounted; CI builds the image, but local Docker daemon was unavailable for a container runtime check.
+- [x] Fresh public clone: installed requirements in a new virtual environment, passed all unit tests, loaded case data, and verified `/health`, `/mode` and `/chat` against the Mainframe model.
+- [ ] **Optional production check:** Run the Docker container locally with mounted data; CI already builds the image, but the local Docker daemon was unavailable.
 
 ## Demonstration examples (case PDF, page 2)
 
@@ -40,7 +41,7 @@ Updated: 23 November 2026. `[x]` means verified, `[ ]` means open. Items marked 
 
 - [x] Public GitHub repository: https://github.com/grinch1/artefact-ai-engineer
 - [x] More than one genuine progress commit on `main`; no force push used.
-- [x] Twenty-two unit tests pass locally, including policy retrieval, installment calculations, currency rounding and strict tool routing. GitHub Actions passed the earlier gpt-oss implementation; this refactor still needs CI verification.
+- [x] Twenty-two unit tests pass locally and from a fresh clone, including policy retrieval, installment calculations, currency rounding and strict tool routing. [GitHub Actions passed](https://github.com/grinch1/artefact-ai-engineer/actions/runs/45266497017) compilation, tests and Docker build for refactor commit `3c50834`.
 - [x] Private case CSVs, internal PDF, ZIP, and API keys are excluded from version control; the reviewed customer-facing `policy.json` is public.
 - [ ] Review the final repository contents and README as the candidate before submission.
 - [ ] Freeze the repository after the submission date and time; the case explicitly forbids later changes.
@@ -57,7 +58,6 @@ The PDF and email give different delivery channels. The planned interpretation i
 
 ## Next work, in order
 
-1. Review the gpt-oss 20B examples and limits with the candidate.
-2. Configure a hosted paid-model API key later and repeat the scenarios. Do not commit the key.
-3. Review from a fresh clone and, if available, run the container with the case data mounted read-only.
-4. Draft and inspect the English PDF, then submit through both channels and freeze the repository.
+1. Candidate reviews the final README, five examples, public repository, and English PDF in Downloads.
+2. Submit the English PDF through the Google Form and reply to the original Artefact email with the public repository link by the deadline.
+3. Record the submission time and final commit, then freeze the repository. A hosted paid-model comparison is optional future work; do not commit an API key or change this repository after the deadline.
