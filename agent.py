@@ -22,6 +22,7 @@ Os telefones e e-mails do manual são inconsistentes. Não forneça nenhum núme
 Para exclusão de dados, informe que a solicitação deve ser feita à equipe humana. Não peça e-mail, telefone ou outro dado pessoal neste chat, pois não existe integração para registrar ou encaminhar essa solicitação.
 Não há ferramenta para calcular frete externo. Informe que o valor depende de CEP, peso e dimensões. Não peça CEP ou dimensões para este cálculo, nem ofereça cotação ou estimativa que você não consegue fazer.
 Não há integração para abrir devoluções, registrar reclamações, emitir etiquetas ou acionar transportadoras. Explique as regras e oriente o cliente a procurar a equipe humana. Não se ofereça para iniciar ou encaminhar ações.
+Ao falar de devolução, não convide o cliente a iniciar o processo neste chat nem encerre com "basta falar" sobre esse processo; diga explicitamente que ele deve procurar a equipe humana.
 Para preço, use os valores retornados por search_products, sem recalcular descontos. Quando houver promoção, mostre preço original, percentual e preço vigente; para PIX, consulte também get_policy sobre cumulatividade.
 `price_brl` é o preço de venda normal ou já promocional, sem o desconto PIX em produto não promocional. `pix_price_brl` é uma alternativa de pagamento, nunca diga que `price_brl` já inclui PIX. Só mencione valor PIX quando for pertinente à pergunta e identifique os dois valores separadamente.
 Para parcelamento, consulte check_installment para calcular a opção solicitada com a regra estruturada; não faça o cálculo de cabeça. Use o resultado verificado antes de afirmar se é permitido.
@@ -41,6 +42,10 @@ def answer_issue(message: str, answer: str, tool_names=()) -> str | None:
     """Reject known unsupported claims while keeping the wording model-generated."""
     normalized_message = re.sub(r"\s+", " ", re.sub(r"[^a-z0-9]+", " ", normalize(message)))
     normalized_answer = re.sub(r"\s+", " ", re.sub(r"[^a-z0-9]+", " ", normalize(answer)))
+    if "search_products" in tool_names and "pix" not in normalized_message and "pix" in normalized_answer:
+        return "A pergunta é sobre o catálogo, não sobre forma de pagamento. Omita os valores PIX não solicitados."
+    if "metropolitan area" in normalized_answer:
+        return "Responda inteiramente em português; use 'região metropolitana'."
     if (re.search(r"\b(?:devol|arrepend|desist|compr)\w*\b", normalized_message)
             and re.search(r"\b(?:7|sete) dias uteis\b", normalized_answer)):
         return "O prazo de arrependimento de compra online é de sete dias corridos, não úteis. Corrija a unidade."
@@ -58,6 +63,12 @@ def answer_issue(message: str, answer: str, tool_names=()) -> str | None:
             r"\b(?:informe|informar|preciso|qual)\b.{0,55}\bn[uú]mero\b|\bn[uú]mero completo\b",
             answer, re.IGNORECASE | re.DOTALL):
         return "O número do pedido já foi informado. Peça apenas o e-mail da compra."
+    if (re.search(r"devol|arrepend|troca", normalize(message))
+            and not re.search(r"\bpedido\D{0,6}\d+\b", message, re.IGNORECASE)
+            and re.search(r"\b(?:precis\w*|informe|informar|envie)\b.{0,110}"
+                          r"\b(?:n[uú]mero\s+do\s+pedido|e[‑-]?mail|dados)\b",
+                          answer, re.IGNORECASE | re.DOTALL)):
+        return "A pergunta é sobre a regra geral de devolução ou troca. Não peça identificadores pessoais; explique a regra e oriente a equipe humana."
     if re.search(r"[\w.+-]+@[\w.-]+\.[\w-]+|\(?\d{2}\)?\s*\d{4,5}\s*[-–]\s*\d{4}", answer):
         return "Há contato telefônico ou e-mail não confirmado no manual. Reescreva sem esses dados."
     if re.search(r"frete|entrega|envio", message, re.IGNORECASE) and re.search(
@@ -78,12 +89,19 @@ def answer_issue(message: str, answer: str, tool_names=()) -> str | None:
             r"(?:ajuda\s+para|ajudar?\s+a)\s+iniciar.{0,30}devolu[cç][aã]o", answer,
             re.IGNORECASE | re.DOTALL):
         return "Não ofereça iniciar a devolução. Oriente o cliente a procurar a equipe humana."
+    if re.search(r"devol|arrepend|troca", normalize(message)) and re.search(
+            r"\bse\s+(?:quiser|desejar|precisar)\s+iniciar.{0,35}devolu[cç][aã]o"
+            r".{0,40}\bbasta\s+(?:falar|avisar|dizer)\b", answer,
+            re.IGNORECASE | re.DOTALL):
+        return "Este chat não inicia devoluções. Remova o convite e oriente o cliente a procurar a equipe humana."
     if "get_order" in tool_names and re.search(
             r"\b(?:posso|podemos|vou)\b.{0,55}\b(?:acompanhar|avisar|notificar|monitorar)\b|"
             r"\bacompanhar\s+(?:a\s+)?evolu[cç][aã]o\b", answer,
             re.IGNORECASE | re.DOTALL):
         return "O pedido vem de um snapshot, sem acompanhamento ao vivo. Reescreva sem oferecer monitoramento ou aviso futuro."
-    if re.search(r"\b(?:posso|podemos)\s+encaminhar\b", answer, re.IGNORECASE):
+    if re.search(r"\b(?:posso|podemos)\s+encaminhar\b|"
+                 r"\bencaminh\w*\s+(?:sua|a)\s+solicita[cç][aã]o\b",
+                 answer, re.IGNORECASE):
         return "Não há integração de encaminhamento. Oriente o cliente a procurar a equipe humana, sem afirmar que você fará o envio."
     if re.search(r"(?:exclu|apag).{0,20}dados|dados\s+pessoais", message,
                  re.IGNORECASE) and re.search(
@@ -96,6 +114,11 @@ def answer_issue(message: str, answer: str, tool_names=()) -> str | None:
             r"\b(?:site|website|portal)\b.{0,65}\b(?:encontrar|canais|contato)\b",
             answer, re.IGNORECASE | re.DOTALL):
         return "Nenhum site oficial foi fornecido. Não indique um canal de atendimento não verificado."
+    if re.search(r"(?:exclu|apag).{0,20}dados|dados\s+pessoais", message,
+                 re.IGNORECASE) and re.search(
+            r"\b(?:posso|podemos)\b.{0,55}\b(?:indicar|mostrar|localizar)\b.{0,45}"
+            r"\b(?:canais|contato|informac[aã]o)\b", answer, re.IGNORECASE | re.DOTALL):
+        return "Não ofereça indicar canais de atendimento que não foram confirmados. Oriente a procurar a equipe humana."
     if re.search(r"garanti\w*", message, re.IGNORECASE) and re.search(
             r"consultar\s+o\s+cat[aá]logo\s+para\s+confirmar", answer, re.IGNORECASE):
         return "O catálogo não contém prazo de garantia por produto. A condição específica depende do certificado do fabricante."
@@ -103,6 +126,15 @@ def answer_issue(message: str, answer: str, tool_names=()) -> str | None:
             r"\b(?:posso|podemos)\b.{0,70}\b(?:verificar|confirmar)\b.{0,35}\bcertificado\b",
             answer, re.IGNORECASE | re.DOTALL):
         return "Não há acesso ao certificado individual. Informe que o prazo específico consta nele."
+    if re.search(r"garanti\w*", message, re.IGNORECASE) and re.search(
+            r"\bbasta\s+me\s+(?:dizer|informar|passar)\b.{0,45}"
+            r"\b(?:instrumento|produto|nome|modelo)\b",
+            normalize(answer)):
+        return ("Reescreva a resposta completa, mantendo os prazos gerais de garantia legal e do fabricante. "
+                "O nome do instrumento não confirma a garantia específica; ela consta no certificado.")
+    if re.search(r"\bgaranti\w*\b", normalized_message) and not re.search(
+            r"\b90\s+dias\b", normalized_answer):
+        return "Inclua a garantia legal de 90 dias corridos a partir do recebimento, além da regra do fabricante consultada."
     if re.search(r"\b\d{1,2}\s*(?:x|vezes)\b", message, re.IGNORECASE) and re.search(
             r"(?:outras?\s+op[cç][oõ]es|outra\s+forma\s+de\s+pagamento)", answer, re.IGNORECASE):
         return "A resposta de parcelamento deve tratar apenas a quantidade solicitada, sem oferecer alternativas."

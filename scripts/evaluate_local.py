@@ -21,7 +21,7 @@ CASES = [
     ("hours", "Qual é o horário de funcionamento da loja?", ["get_policy"], ["sábado"]),
     ("address", "Onde fica a loja?", ["get_policy"], ["3200", "maio"]),
     ("local_shipping", "Quanto custa o frete para Campo Grande em um pedido de R$ 400?", ["get_policy"], []),
-    ("outbound_shipping", "Quanto sai o frete para fora de Campo Grande?", ["get_policy"], ["cep"]),
+    ("outbound_shipping", "Quanto sai o frete para fora de Campo Grande?", ["get_policy"], ["peso", "dimens"]),
     ("warranty", "Qual é a garantia dos instrumentos?", ["get_policy"], ["fabricante"]),
     ("privacy_deletion", "Como apago meus dados pessoais?", ["get_policy"], ["dados"]),
     ("installments", "Posso parcelar em 10x sem juros um produto de R$ 800?", ["get_policy"], ["R$ 100"]),
@@ -68,6 +68,7 @@ def main() -> None:
             checks["no_markdown_table"] = "|---" not in answer and "|----" not in answer
             checks["no_markdown_bold"] = "**" not in answer
             if name == "catalog":
+                checks["no_unasked_pix"] = "pix" not in lowered
                 checks["stock_filter"] = any(
                     call["name"] == "search_products" and
                     json.loads(call["arguments"]).get("in_stock_only") is True
@@ -103,17 +104,36 @@ def main() -> None:
             if name == "local_shipping":
                 checks["local_fee"] = bool(re.search(r"r\$\s*35(?:,00)?\b", lowered))
             if name == "outbound_shipping":
+                checks["destination_based"] = "cep" in lowered or "destino" in lowered
                 checks["no_local_flat_fee"] = not re.search(r"r\$\s*35(?:,00)?\b", lowered)
                 checks["no_quote_offer"] = not any(phrase in lowered for phrase in
                     ("posso estimar", "posso cotar", "posso calcular"))
+                checks["no_forward_offer"] = not re.search(
+                    r"\b(?:posso|podemos|que)\s+encaminh\w*", normalize(lowered))
+            if name == "return":
+                checks["no_unneeded_identifiers"] = not re.search(
+                    r"\b(?:precis\w*|informe|informar|envie)\b.{0,110}"
+                    r"\b(?:n[uú]mero\s+do\s+pedido|e[‑-]?mail|dados)\b",
+                    answer, re.IGNORECASE | re.DOTALL)
+                checks["no_start_offer"] = not re.search(
+                    r"\bse\s+(?:quiser|desejar|precisar)\s+iniciar.{0,35}devolu[cç][aã]o"
+                    r".{0,40}\bbasta\s+(?:falar|avisar|dizer)\b",
+                    answer, re.IGNORECASE | re.DOTALL)
             if name == "privacy_deletion":
                 checks["no_contact_details"] = not re.search(
                     r"[\w.+-]+@[\w.-]+\.[\w-]+|\(?\d{2}\)?\s*\d{4,5}\s*[-–]\s*\d{4}", answer)
+                checks["no_contact_offer"] = not re.search(
+                    r"\b(?:posso|podemos)\b.{0,55}\b(?:indicar|mostrar|localizar)\b.{0,45}"
+                    r"\b(?:canais|contato|informac[aã]o)\b", answer, re.IGNORECASE | re.DOTALL)
             if name == "hours":
                 checks["hours"] = bool(re.search(r"18(?::00|h00|h\b)", lowered) and
                                        re.search(r"13(?::00|h00|h\b)", lowered))
             if name == "warranty":
                 checks["legal_90_days"] = bool(re.search(r"90\s*(?:\([^)]*\)\s*)?dias", lowered))
+                checks["no_certificate_offer"] = not re.search(
+                    r"\bbasta\s+me\s+(?:dizer|informar|passar)\b.{0,45}"
+                    r"\b(?:instrumento|produto|nome|modelo)\b",
+                    normalize(lowered))
             if name == "installments":
                 installment_text = re.sub(r"\b7\s*x\s*(?:a|até)\s*12\s*x\b", "faixa de 7 a 12 parcelas", lowered)
                 installment_text = re.sub(r"\b7\s*[-‐‑‒–—]\s*12\s*x\b", "faixa de 7 a 12 parcelas", installment_text)
@@ -136,6 +156,8 @@ def main() -> None:
                 checks["no_wrong_exchange_unit"] = not re.search(
                     r"\b(?:30|trinta)\s+dias\s+úteis\b", lowered)
                 checks["needs_confirmation"] = "confirm" in lowered
+            if name == "shipping_500":
+                checks["portuguese_geography"] = "metropolitan area" not in lowered
             if name == "installments_799_8":
                 checks["rejects_8x"] = any(word in lowered for word in
                     ("não é possível", "não pode", "não atende", "não seria possível", "não é permitido"))
@@ -155,6 +177,7 @@ def main() -> None:
                               "model_tool_calls": agent.last_tool_calls,
                               "effective_catalog_queries": [item["result"].get("applied_query")
                                   for item in agent.last_tool_results if item["name"] == "search_products"],
+                              "rejections": agent.last_rejections,
                               "elapsed_s": round(time.perf_counter() - started, 2),
                               "answer": answer},
                              ensure_ascii=False), flush=True)

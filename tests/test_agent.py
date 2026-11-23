@@ -28,6 +28,12 @@ class AgentTests(unittest.TestCase):
         self.assertIsNotNone(answer_issue("meu@email.com", "Posso acompanhar a evolução do envio.",
                                           ["get_order"]))
         self.assertIsNotNone(answer_issue("Posso devolver?", "Posso encaminhar à equipe."))
+        self.assertIsNotNone(answer_issue("Comprei online. Posso devolver?",
+                                          "Para iniciar, precisamos do número do pedido e do e-mail da compra."))
+        self.assertIsNotNone(answer_issue("Comprei online. Posso devolver?",
+                                          "Se quiser iniciar a devolução, basta falar!"))
+        self.assertIsNotNone(answer_issue("Qual o frete para outra cidade?",
+                                          "Se quiser que encaminhemos sua solicitação à equipe, avise."))
         self.assertIsNotNone(answer_issue("Qual a garantia?", "Posso consultar o catálogo para confirmar."))
         self.assertIsNotNone(answer_issue("Posso parcelar em 10x?", "Posso verificar outras opções."))
         self.assertIsNotNone(answer_issue("Como apago meus dados pessoais?",
@@ -42,6 +48,18 @@ class AgentTests(unittest.TestCase):
                                           "Visite nosso site para os canais oficiais."))
         self.assertIsNotNone(answer_issue("Qual é a garantia?",
                                           "Posso ajudar a verificar detalhes do certificado."))
+        self.assertIsNotNone(answer_issue("Quais violões têm em estoque?",
+                                          "Violão A: R$ 800 (PIX: R$ 760).", ["search_products"]))
+        self.assertIsNotNone(answer_issue("O frete para Campo Grande é grátis?",
+                                          "Sim, na Campo Grande metropolitan area."))
+        self.assertIsNotNone(answer_issue("Como apago meus dados pessoais?",
+                                          "Posso indicar onde encontrar os canais de atendimento."))
+        self.assertIsNotNone(answer_issue("Qual é a garantia?",
+                                          "Para detalhes, basta me dizer qual instrumento é."))
+        self.assertIsNotNone(answer_issue("Qual é a garantia?",
+                                          "Para detalhes, basta me informar o nome ou modelo."))
+        self.assertIsNotNone(answer_issue("Qual é a garantia?",
+                                          "O prazo do fabricante está no certificado."))
         self.assertIsNone(answer_issue("Qual o frete?", "O valor depende do CEP, peso e dimensões."))
         self.assertIsNotNone(answer_issue("Comprei presencialmente e me arrependi.",
                                           "A devolução online tem prazo de 7 dias úteis."))
