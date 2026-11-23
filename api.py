@@ -11,7 +11,6 @@ from pydantic import BaseModel, Field
 from pathlib import Path
 
 from agent import Agent, OllamaAgent
-from offline import OfflineAgent
 from store import Store
 
 
@@ -64,7 +63,10 @@ def health():
 
 @app.get("/mode")
 def mode():
-    return {"mode": os.getenv("AGENT_MODE", "offline")}
+    selected = os.getenv("AGENT_MODE", "ollama")
+    model = (os.getenv("OLLAMA_MODEL", "qwen3:14b") if selected == "ollama"
+             else os.getenv("OPENAI_MODEL", "gpt-5.4-mini") if selected == "openai" else None)
+    return {"mode": selected, "model": model}
 
 
 @app.post("/chat", response_model=ChatResponse)
@@ -75,16 +77,14 @@ def chat(request: ChatRequest):
                 if len(sessions) >= 100:
                     raise HTTPException(status_code=503, detail="Session capacity reached")
                 store = get_store()
-                mode = os.getenv("AGENT_MODE", "offline")
+                mode = os.getenv("AGENT_MODE", "ollama")
                 if mode == "openai":
                     if not os.getenv("OPENAI_API_KEY"):
                         raise HTTPException(status_code=503, detail="OPENAI_API_KEY is required")
                     agent = Agent(store, os.getenv("OPENAI_MODEL", "gpt-5.4-mini"))
                 elif mode == "ollama":
-                    agent = OllamaAgent(store, os.getenv("OLLAMA_MODEL", "qwen2.5-mainframe:7b"),
+                    agent = OllamaAgent(store, os.getenv("OLLAMA_MODEL", "qwen3:14b"),
                                          os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11435/v1"))
-                elif mode == "offline":
-                    agent = OfflineAgent(store)
                 else:
                     raise HTTPException(status_code=503, detail="Unsupported AGENT_MODE")
                 sessions[request.session_id] = agent

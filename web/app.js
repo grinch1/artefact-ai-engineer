@@ -15,8 +15,8 @@ if (isFile) {
   sessionId = sessionStorage.getItem('emporio-session') || sessionId;
   sessionStorage.setItem('emporio-session', sessionId);
   fetch('/mode').then(response => response.json()).then(data => {
-    const names = {openai: 'IA · modelo hospedado', ollama: 'IA · Mainframe', offline: 'Demonstração · sem IA'};
-    document.querySelector('#mode-label').textContent = names[data.mode] || 'Modo indisponível';
+    const location = {openai: 'IA hospedada', ollama: 'Mainframe'}[data.mode];
+    document.querySelector('#mode-label').textContent = location ? `${location} · ${data.model}` : 'Modo indisponível';
   }).catch(() => {
     document.querySelector('#mode-label').textContent = 'Modo indisponível';
   });

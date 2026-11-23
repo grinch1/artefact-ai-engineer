@@ -10,6 +10,43 @@ from pathlib import Path
 from pypdf import PdfReader
 
 
+# Section boundaries locate evidence in the supplied PDF; they contain no answers.
+POLICY_HEADINGS = {
+    2: [("1", "Sobre a loja", "1. Sobre a Empório da Música"),
+        ("1.1", "Missão", "1.1 Missão"),
+        ("1.2", "Dados da empresa", "1.2 Dados da Empresa"),
+        ("2", "Horário de funcionamento", "2. Horário de Funcionamento")],
+    3: [("3", "Formas de pagamento", "3. Formas de Pagamento"),
+        ("3.1", "Regras de parcelamento", "3.1 Regras de Parcelamento")],
+    4: [("4", "Trocas e devoluções", "4. Política de Trocas e Devoluções"),
+        ("4.1", "Arrependimento em compras online", "4.1 Direito de Arrependimento"),
+        ("4.2", "Troca por defeito", "4.2 Trocas por Defeito"),
+        ("4.3", "Troca por preferência", "4.3 Trocas por Preferência"),
+        ("4.4", "Itens não elegíveis para troca", "4.4 Itens Não Elegíveis"),
+        ("5", "Frete e entregas", "5. Política de Frete e Entregas"),
+        ("5.1", "Frete na região metropolitana de Campo Grande", "5.1 Entregas na Região Metropolitana"),
+        ("5.2", "Entregas para outras cidades", "5.2 Entregas para Outras Cidades")],
+    5: [("5.3", "Código de rastreamento", "5.3 Código de Rastreamento")],
+    6: [("6", "Promoções e descontos", "6. Promoções e Descontos"),
+        ("6.1", "Tipos de promoção", "6.1 Tipos de Promoção"),
+        ("6.2", "Regras de promoções e desconto PIX", "6.2 Regras de Promoções"),
+        ("7", "Atendimento via WhatsApp", "7. Atendimento via WhatsApp"),
+        ("7.1", "Diretrizes e escopo do atendimento", "7.1 Diretrizes de Atendimento"),
+        ("7.2", "Fluxo de atendimento", "7.2 Fluxo de Atendimento Padrão")],
+    7: [("7.3", "Situações especiais", "7.3 Situações Especiais"),
+        ("8", "Garantia", "8. Garantia"),
+        ("8.1", "Garantia legal", "8.1 Garantia Legal"),
+        ("8.2", "Garantia do fabricante", "8.2 Garantia do Fabricante"),
+        ("8.3", "Exclusões da garantia", "8.3 O que Não Cobre a Garantia"),
+        ("9", "Privacidade", "9. Privacidade e Proteção de Dados")],
+    8: [("10", "Disposições finais", "10. Disposições Finais")],
+}
+
+POLICY_CONTINUATIONS = {5: ("5.2", "Entregas para outras cidades"),
+                        7: ("7.2", "Fluxo de atendimento"),
+                        8: ("9", "Privacidade")}
+
+
 def normalize(value: str) -> str:
     value = unicodedata.normalize("NFKD", str(value)).casefold()
     return "".join(c for c in value if not unicodedata.combining(c))
@@ -33,12 +70,38 @@ class Store:
         if len(policy) != 1:
             raise FileNotFoundError(f"Expected one policy PDF in {self.data_dir}")
         self.policy_pages = [page.extract_text() or "" for page in PdfReader(policy[0]).pages]
+        self.policy_sections = self._build_policy_sections()
         self.categories = {r["category_id"]: r["name"] for r in self.tables["categories"]}
         self.promotions = {}
         for row in self.tables["promotions"]:
             if row["is_active"].strip().lower() in ("1", "true", "yes"):
                 self.promotions.setdefault(row["product_id"], []).append(row)
         self._build_db()
+
+    def _build_policy_sections(self) -> list[dict]:
+        sections = []
+        for page, raw in enumerate(self.policy_pages, 1):
+            body = " ".join(raw.split())
+            markers = [(body.find(anchor), section, title)
+                       for section, title, anchor in POLICY_HEADINGS.get(page, [])]
+            markers = sorted((pos, section, title) for pos, section, title in markers if pos >= 0)
+            if not markers:
+                if body:
+                    sections.append({"page": page, "section": "", "title": "Manual", "text": body})
+                continue
+            if page in POLICY_CONTINUATIONS and markers[0][0] > 0:
+                section, title = POLICY_CONTINUATIONS[page]
+                excerpt = body[:markers[0][0]].strip()
+                if len(excerpt) >= 50:
+                    sections.append({"page": page, "section": section, "title": title,
+                                     "text": excerpt})
+            for index, (start, section, title) in enumerate(markers):
+                end = markers[index + 1][0] if index + 1 < len(markers) else len(body)
+                excerpt = body[start:end].strip()
+                if len(excerpt) >= 50:
+                    sections.append({"page": page, "section": section, "title": title,
+                                     "text": excerpt})
+        return sections
 
     def _build_db(self) -> None:
         """Load a typed, relational snapshot; source files remain untouched."""
@@ -116,7 +179,9 @@ class Store:
         found.sort(key=lambda x: (0 if normalize(x["name"]) == normalize(query) else 1,
                                   0 if normalize(query) and normalize(query) in normalize(x["name"]) else 1,
                                   normalize(x["name"]), x["id"]))
-        return {"results": found[:max(1, min(limit, 12))], "total_matches": len(found),
+        page = found[:max(1, min(limit, 12))]
+        return {"results": page, "returned_count": len(page), "total_matches": len(found),
+                "has_more": len(found) > len(page),
                 "source": "CSV snapshot loaded into SQLite at startup"}
 
     def get_order(self, order_id: str, email: str) -> dict:
@@ -135,16 +200,17 @@ class Store:
     def get_policy(self, topic: str) -> dict:
         if not topic.strip():
             return {"error": "Specify a policy topic."}
-        words = [w for w in re.findall(r"\w+", normalize(topic)) if len(w) > 3]
+        words = [w for w in re.findall(r"\w+", normalize(topic))
+                 if len(w) > 2 and w not in {"qual", "quais", "para", "como", "dos", "das", "uma", "com"}]
         scored = []
-        for i, page in enumerate(self.policy_pages, 1):
-            paragraphs = [" ".join(p.split()) for p in page.split("\n\n") if p.strip()]
-            for paragraph in paragraphs:
-                score = sum(normalize(paragraph).count(w) for w in words)
-                if score:
-                    scored.append((score, i, paragraph))
-        scored.sort(key=lambda x: x[0], reverse=True)
-        return {"matches": [{"page": i, "text": p[:1600]} for _, i, p in scored[:4]],
+        for item in self.policy_sections:
+            title = normalize(item["title"])
+            content = normalize(item["text"])
+            score = sum(5 * (word in title) + min(content.count(word), 3) for word in words)
+            if score:
+                scored.append((score, item))
+        scored.sort(key=lambda pair: (-pair[0], pair[1]["page"], pair[1]["section"]))
+        return {"matches": [dict(item, text=item["text"][:3000]) for _, item in scored[:4]],
                 "source": "store policy PDF, version 2.1 (June 2025)"}
 
 
