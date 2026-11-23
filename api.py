@@ -57,7 +57,7 @@ def health():
     try:
         get_store()
         return {"status": "ok"}
-    except FileNotFoundError as exc:
+    except (FileNotFoundError, ValueError) as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
@@ -91,7 +91,7 @@ def chat(request: ChatRequest):
             agent = sessions[request.session_id]
         answer = agent.ask(request.message)
         return ChatResponse(session_id=request.session_id, answer=answer)
-    except FileNotFoundError as exc:
+    except (FileNotFoundError, ValueError) as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except HTTPException:
         raise

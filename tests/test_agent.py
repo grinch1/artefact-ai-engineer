@@ -5,7 +5,7 @@ from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from agent import Agent, OllamaAgent
+from agent import Agent, OllamaAgent, answer_issue
 
 
 class FakeStore:
@@ -19,6 +19,30 @@ class FakeStore:
 
 
 class AgentTests(unittest.TestCase):
+    def test_answer_guard_rejects_unsupported_contact_and_shipping_quote(self):
+        self.assertIsNotNone(answer_issue("Como apago meus dados?", "Ligue para (67) 3341-4444."))
+        self.assertIsNotNone(answer_issue("Qual o frete?", "Posso ajudar a estimar o valor com seu CEP."))
+        self.assertIsNotNone(answer_issue("Posso devolver?", "Posso ajudar a iniciar a devolução."))
+        self.assertIsNotNone(answer_issue("Quais violões?", "| Nome | Preço |\n|------|-------|"))
+        self.assertIsNotNone(answer_issue("Qual o preço?", "**R$ 100,00**"))
+        self.assertIsNotNone(answer_issue("meu@email.com", "Posso acompanhar a evolução do envio.",
+                                          ["get_order"]))
+        self.assertIsNotNone(answer_issue("Posso devolver?", "Posso encaminhar à equipe."))
+        self.assertIsNotNone(answer_issue("Qual a garantia?", "Posso consultar o catálogo para confirmar."))
+        self.assertIsNotNone(answer_issue("Posso parcelar em 10x?", "Posso verificar outras opções."))
+        self.assertIsNotNone(answer_issue("Como apago meus dados pessoais?",
+                                          "Pode me informar seu e-mail antes de encaminhar?"))
+        self.assertIsNotNone(answer_issue("Meu pedido 9 já foi enviado?",
+                                          "Preciso que você informe o número completo do pedido."))
+        self.assertIsNotNone(answer_issue("Posso devolver?",
+                                          "Se precisar de ajuda para iniciar a devolução, me avise!"))
+        self.assertIsNotNone(answer_issue("Quanto sai o frete?",
+                                          "Para estimar, basta informar o CEP e as dimensões."))
+        self.assertIsNotNone(answer_issue("Como apago meus dados?",
+                                          "Visite nosso site para os canais oficiais."))
+        self.assertIsNotNone(answer_issue("Qual é a garantia?",
+                                          "Posso ajudar a verificar detalhes do certificado."))
+        self.assertIsNone(answer_issue("Qual o frete?", "O valor depende do CEP, peso e dimensões."))
     def test_ollama_consults_policy_then_returns_model_text(self):
         client = Mock()
         client.chat.completions.create.return_value = SimpleNamespace(

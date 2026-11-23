@@ -8,18 +8,18 @@ Updated: 23 November 2026. `[x]` means verified, `[ ]` means open. Items marked 
 - [x] Text message interface through the web chat and `POST /chat`; CLI also available.
 - [x] Store persona and tone specified in the agent instructions and shown in the UI.
 - [x] Product, price, stock, active promotion, and order lookup from the supplied CSV snapshot loaded into SQLite.
-- [x] Store policy lookup from the supplied PDF, separate from structured data tools.
+- [x] The supplied PDF was reviewed into versioned `policy.json` with section/page references and typed facts; startup checks the PDF hash when the original is present.
 - [x] A real-model accessory example redirects without claiming that accessories are sold.
 - [x] Compared Qwen 2.5 7B, Qwen3 14B and gpt-oss 20B on the Mainframe. gpt-oss 20B is the selected local model; the hosted model still needs an API-key test.
-- [x] The application retrieves policy PDF evidence before every model response; section and page are recorded. No fixed policy response replaces model output.
-- [ ] **Partial:** Evaluate section-level keyword retrieval across paraphrases and ambiguous questions; it can still miss relevant passages.
+- [x] The application retrieves structured policy evidence before every model response; section and page are recorded. No fixed policy response replaces model output.
+- [x] Tested representative paraphrases for address, hours, privacy, return, shipping, warranty, and installments; retrieval can still miss unseen wording.
 - [x] Order lookup requires both order number and matching purchase email; tests cover a mismatch.
-- [ ] **Partial:** gpt-oss 20B passed the final nine-case local run, but an earlier run suggested an invalid installment alternative. The instruction and evaluator now address this observed error; repeated and broader testing remains necessary.
+- [x] The local model passed the 12-case run after the policy/tool refactor; the catalog filter is now checked against the effective tool query and listed products. Earlier installment variation led to a backend calculation tool and answer checks. Broader testing remains necessary for production claims.
 - [x] Static-data and no-live-tracking limits are stated in the UI and README.
 
 ## Technical choices and README (case PDF, page 2)
 
-- [x] Explain approach: allowlisted function calls, SQLite for CSVs, keyword retrieval for the eight-page policy manual (`README.md`).
+- [x] Explain approach: four allowlisted functions across catalog, orders, and policy domains; SQLite for CSVs and structured retrieval from the versioned policy object (`README.md`).
 - [x] Explain provider/model choice and how to configure the API; hosted mode defaults to `gpt-5.4-mini`.
 - [x] Explain interface choice (FastAPI plus small HTML/CSS/JavaScript chat) and CLI alternative.
 - [x] Explain in-memory conversation history and its reset on restart.
@@ -40,14 +40,14 @@ Updated: 23 November 2026. `[x]` means verified, `[ ]` means open. Items marked 
 
 - [x] Public GitHub repository: https://github.com/grinch1/artefact-ai-engineer
 - [x] More than one genuine progress commit on `main`; no force push used.
-- [x] Twelve unit tests pass, including policy prefetch before both model adapters and a regression for policy-section ranking. GitHub Actions passed Python compilation, tests, and Docker build for the gpt-oss implementation commit `984f3c2`.
-- [x] Private case CSVs, internal policy PDF, ZIP, and API keys are excluded from version control.
+- [x] Twenty-two unit tests pass locally, including policy retrieval, installment calculations, currency rounding and strict tool routing. GitHub Actions passed the earlier gpt-oss implementation; this refactor still needs CI verification.
+- [x] Private case CSVs, internal PDF, ZIP, and API keys are excluded from version control; the reviewed customer-facing `policy.json` is public.
 - [ ] Review the final repository contents and README as the candidate before submission.
 - [ ] Freeze the repository after the submission date and time; the case explicitly forbids later changes.
 
 ## Submission (case PDF, page 3; recruitment email)
 
-- [ ] Prepare a short English PDF containing the repository link, architecture, evidence, and limitations. Name it `Vitor Hugo Moraes da Costa - Senior AI Engineer.pdf`.
+- [x] Prepared and visually reviewed a two-page English PDF in Downloads with the repository link, architecture, evidence, and limitations: `Vitor Hugo Moraes da Costa - Senior AI Engineer.pdf`.
 - [ ] Submit the PDF through the Google Form from the recruitment email while signed into a Gmail-enabled account.
 - [ ] Reply to the original Artefact email with the public repository link, as requested by the case PDF.
 - [ ] Verify receipt/submission before **24 November 2026, 23:59, São Paulo time** (second business day after the Saturday email).

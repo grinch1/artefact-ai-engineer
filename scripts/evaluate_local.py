@@ -1,4 +1,4 @@
-"""Measure nine real model answers against case-specific expectations."""
+"""Measure real model answers against case-specific expectations."""
 
 import argparse
 import json
@@ -9,7 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from agent import OllamaAgent
-from store import Store
+from store import Store, normalize
 
 
 CASES = [
@@ -19,8 +19,11 @@ CASES = [
     ("promotion_pix", "O ukulele Ohana CK-20 está com desconto? Se eu pagar no PIX, ganho mais 5%?", ["search_products", "get_policy"], ["439,20", "549,00", "20%"]),
     ("accessory", "Vocês vendem cordas para violão?", ["get_policy"], ["cordas", "não"]),
     ("hours", "Qual é o horário de funcionamento da loja?", ["get_policy"], ["sábado"]),
-    ("local_shipping", "Quanto custa o frete para Campo Grande em um pedido de R$ 400?", ["get_policy"], ["35,00"]),
+    ("address", "Onde fica a loja?", ["get_policy"], ["3200", "maio"]),
+    ("local_shipping", "Quanto custa o frete para Campo Grande em um pedido de R$ 400?", ["get_policy"], []),
+    ("outbound_shipping", "Quanto sai o frete para fora de Campo Grande?", ["get_policy"], ["cep"]),
     ("warranty", "Qual é a garantia dos instrumentos?", ["get_policy"], ["fabricante"]),
+    ("privacy_deletion", "Como apago meus dados pessoais?", ["get_policy"], ["dados"]),
     ("installments", "Posso parcelar em 10x sem juros um produto de R$ 800?", ["get_policy"], ["R$ 100"]),
 ]
 
@@ -54,6 +57,7 @@ def main() -> None:
                       "text": all(t.casefold() in lowered for t in required_text)}
             checks["policy_before_answer"] = consulted
             checks["no_markdown_table"] = "|---" not in answer and "|----" not in answer
+            checks["no_markdown_bold"] = "**" not in answer
             if name == "catalog":
                 checks["stock_filter"] = any(
                     call["name"] == "search_products" and
@@ -61,6 +65,15 @@ def main() -> None:
                     for call in agent.last_tool_calls
                 )
                 checks["price_labels"] = "preços já consideram o desconto" not in lowered
+                catalog_results = [item["result"] for item in agent.last_tool_results
+                                   if item["name"] == "search_products" and "results" in item["result"]]
+                checks["applied_category"] = any(
+                    result.get("applied_query") == "violão" for result in catalog_results)
+                simplified_answer = re.sub(r"[\W_]+", "", normalize(answer))
+                checks["catalog_coverage"] = any(
+                    sum(re.sub(r"[\W_]+", "", normalize(product["name"])) in simplified_answer
+                        for product in result["results"]) >= min(3, result["returned_count"])
+                    for result in catalog_results)
             if name == "order_privacy":
                 checks["privacy"] = "confirmado" not in lowered and "rastreamento" not in lowered
             if name == "promotion_pix":
@@ -68,12 +81,25 @@ def main() -> None:
                     ("não acumula", "não se acumula", "não se aplica", "não é aplicado",
                      "não é aplicável", "não é cumulativo", "não são cumulativos",
                      "não são cumulativas",
-                     "não há desconto adicional"))
+                     "não há desconto adicional", "não há acréscimo adicional",
+                     "não gera mais", "sem desconto adicional", "não podem ser combinados"))
+                checks["no_extra_discount"] |= bool(re.search(
+                    r"\bnao\b.{0,45}\b(?:acumul\w*|aplic\w*|acrescim\w*|gera\w*|combin\w*|abatim\w*)",
+                    normalize(lowered))) and "pix" in lowered
             if name == "accessory":
                 checks["no_partner_offer"] = not any(phrase in lowered for phrase in
                     ("posso indicar lojas", "posso indicar parceiros",
                      "posso recomendar parceiros", "parceiros locais",
-                     "posso ajudar a encontrar", "posso procurar lojas"))
+                     "posso ajudar a encontrar opções online", "posso procurar lojas"))
+            if name == "local_shipping":
+                checks["local_fee"] = bool(re.search(r"r\$\s*35(?:,00)?\b", lowered))
+            if name == "outbound_shipping":
+                checks["no_local_flat_fee"] = not re.search(r"r\$\s*35(?:,00)?\b", lowered)
+                checks["no_quote_offer"] = not any(phrase in lowered for phrase in
+                    ("posso estimar", "posso cotar", "posso calcular"))
+            if name == "privacy_deletion":
+                checks["no_contact_details"] = not re.search(
+                    r"[\w.+-]+@[\w.-]+\.[\w-]+|\(?\d{2}\)?\s*\d{4,5}\s*[-–]\s*\d{4}", answer)
             if name == "hours":
                 checks["hours"] = bool(re.search(r"18(?::00|h00|h\b)", lowered) and
                                        re.search(r"13(?::00|h00|h\b)", lowered))
@@ -100,6 +126,8 @@ def main() -> None:
                               "policy_sections": agent.last_policy_sections,
                               "model_tools": agent.last_tools,
                               "model_tool_calls": agent.last_tool_calls,
+                              "effective_catalog_queries": [item["result"].get("applied_query")
+                                  for item in agent.last_tool_results if item["name"] == "search_products"],
                               "elapsed_s": round(time.perf_counter() - started, 2),
                               "answer": answer},
                              ensure_ascii=False), flush=True)

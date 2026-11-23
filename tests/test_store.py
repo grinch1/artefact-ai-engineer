@@ -1,9 +1,10 @@
+import json
 import sys
 import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from store import Store
+from store import Store, customer_safe_policy_text
 
 
 class StoreTests(unittest.TestCase):
@@ -15,14 +16,19 @@ class StoreTests(unittest.TestCase):
                 {"product_id": "1", "name": "Violão Teste", "description": "Aço", "category_id": "1", "price_brl": "1000", "stock_quantity": "2", "status": "active"},
                 {"product_id": "2", "name": "Ukulele Teste", "description": "Parece violão", "category_id": "2", "price_brl": "200", "stock_quantity": "3", "status": "active"},
                 {"product_id": "3", "name": "Violão Sem Estoque", "description": "", "category_id": "1", "price_brl": "500", "stock_quantity": "0", "status": "active"},
+                {"product_id": "4", "name": "Violão Pix", "description": "Teste de centavos", "category_id": "1", "price_brl": "579.90", "stock_quantity": "1", "status": "active"},
             ],
             "orders": [{"order_id": "9", "customer_id": "7", "status": "confirmed", "order_date": "2025-11-01", "estimated_delivery": "", "tracking_code": ""}],
             "customers": [{"customer_id": "7", "email": "demo@example.com"}],
         }
         cls.store.categories = {"1": "Violões", "2": "Ukuleles"}
         cls.store.promotions = {"1": [{"discount_percent": "20"}]}
-        cls.store.policy_pages = ["", "", "", "4.1 Direito de Arrependimento: até 7 (sete) dias após o recebimento."]
-        cls.store.policy_sections = cls.store._build_policy_sections()
+        cls.store.policy_sections = [{"page": 4, "section": "4.1",
+                                      "title": "Direito de Arrependimento",
+                                      "text": "Devolução em 7 (sete) dias após o recebimento."}]
+        policy = json.loads((Path(__file__).resolve().parents[1] / "policy.json").read_text())
+        cls.store.policy_facts = {item["section"]: item.get("facts", {})
+                                  for item in policy["sections"]}
         cls.store._build_db()
 
     def test_available_guitars_under_budget(self):
@@ -41,9 +47,23 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(result["results"][0]["pix_price_brl"], "R$ 800,00")
         self.assertFalse(result["results"][0]["pix_discount_stacks"])
 
+    def test_pix_uses_decimal_cent_rounding(self):
+        result = self.store.search_products("Violão Pix")["results"][0]
+        self.assertEqual(result["pix_price_brl"], "R$ 550,91")
+
     def test_order_requires_matching_email(self):
         self.assertEqual(self.store.get_order("9", "demo@example.com")["status"], "confirmed")
         self.assertIn("error", self.store.get_order("9", "wrong@example.com"))
+        self.assertEqual(self.store.get_order("9", "")["missing"], ["email"])
+
+    def test_installment_calculation_uses_structured_policy(self):
+        denied = self.store.check_installment(800, 10)
+        self.assertFalse(denied["allowed"])
+        self.assertEqual(denied["installment_brl"], "R$ 80,00")
+        self.assertEqual(denied["minimum_installment_brl"], "R$ 100,00")
+        self.assertTrue(self.store.check_installment(800, 8)["allowed"])
+        self.assertIsNone(self.store.check_installment(40, 2)["allowed"])
+        self.assertIn("error", self.store.check_installment(float("nan"), 10))
 
     def test_policy_returns_relevant_section_with_source(self):
         result = self.store.get_policy("arrependimento compra online")
@@ -61,6 +81,36 @@ class StoreTests(unittest.TestCase):
         ]
         self.assertEqual(store.get_policy("Posso parcelar 10x um produto?")["matches"][0]["section"], "3.1")
         self.assertEqual(store.get_policy("até")["matches"], [])
+
+    def test_policy_routes_customer_phrasings_to_evidence(self):
+        store = Store.__new__(Store)
+        store.policy_sections = [
+            {"page": 2, "section": "1.2", "title": "Dados da empresa",
+             "text": "Endereço: Rua Central, Campo Grande."},
+            {"page": 2, "section": "2", "title": "Horário de funcionamento",
+             "text": "Segunda a sábado, horário de funcionamento."},
+            {"page": 4, "section": "5.1", "title": "Frete em Campo Grande",
+             "text": "Frete local para Campo Grande."},
+            {"page": 5, "section": "5.2", "title": "Entregas para outras cidades",
+             "text": "Envios para cidades fora da região metropolitana."},
+            {"page": 8, "section": "9", "title": "Privacidade",
+             "text": "Exclusão de dados pessoais mediante solicitação."},
+        ]
+        examples = {
+            "Onde fica a loja?": "1.2",
+            "Quando vocês abrem?": "2",
+            "Como apago meus dados pessoais?": "9",
+            "Quanto sai o frete para fora de Campo Grande?": "5.2",
+        }
+        for question, section in examples.items():
+            with self.subTest(question=question):
+                self.assertEqual(store.get_policy(question)["matches"][0]["section"], section)
+
+    def test_conflicting_manual_contacts_are_not_sent_to_model(self):
+        text = "WhatsApp (67) 3341 - 4444 e contato@empóriodamusica.com.br"
+        safe = customer_safe_policy_text(text)
+        self.assertNotIn("3341", safe)
+        self.assertNotIn("@", safe)
 
 
 if __name__ == "__main__":
