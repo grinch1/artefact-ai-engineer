@@ -39,7 +39,7 @@ Updated: 23 November 2026. `[x]` means verified, `[ ]` means open. Items marked 
 
 - [x] Public GitHub repository: https://github.com/grinch1/artefact-ai-engineer
 - [x] More than one genuine progress commit on `main`; no force push used.
-- [x] GitHub Actions previously passed Python compilation, seven tests, and Docker image build. Fifteen tests pass locally after the Mainframe work, including a two-turn order lookup on synthetic records; CI for this commit remains to be checked.
+- [x] GitHub Actions passed Python compilation, all fifteen tests, and Docker image build on the Mainframe experiment commit. Tests include a two-turn order lookup on synthetic records.
 - [x] Private case CSVs, internal policy PDF, ZIP, and API keys are excluded from version control.
 - [ ] Review the final repository contents and README as the candidate before submission.
 - [ ] Freeze the repository after the submission date and time; the case explicitly forbids later changes.
