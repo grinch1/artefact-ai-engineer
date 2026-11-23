@@ -110,6 +110,8 @@ class Store:
                           "category": row["category"],
                           "price_brl": money(current), "original_price_brl": money(original) if discount else None,
                           "discount_percent": discount or None,
+                          "pix_price_brl": money(current if discount else round(original * 0.95, 2)),
+                          "pix_discount_stacks": False if discount else None,
                           "stock_quantity": int(row["stock_quantity"])})
         found.sort(key=lambda x: (0 if normalize(x["name"]) == normalize(query) else 1,
                                   0 if normalize(query) and normalize(query) in normalize(x["name"]) else 1,

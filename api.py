@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from pathlib import Path
 
-from agent import Agent
+from agent import Agent, OllamaAgent
 from offline import OfflineAgent
 from store import Store
 
@@ -80,6 +80,9 @@ def chat(request: ChatRequest):
                     if not os.getenv("OPENAI_API_KEY"):
                         raise HTTPException(status_code=503, detail="OPENAI_API_KEY is required")
                     agent = Agent(store, os.getenv("OPENAI_MODEL", "gpt-5.4-mini"))
+                elif mode == "ollama":
+                    agent = OllamaAgent(store, os.getenv("OLLAMA_MODEL", "qwen2.5-mainframe:7b"),
+                                         os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11435/v1"))
                 elif mode == "offline":
                     agent = OfflineAgent(store)
                 else:
