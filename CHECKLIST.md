@@ -14,7 +14,7 @@ Updated: 23 November 2026. `[x]` means verified, `[ ]` means open. Items marked 
 - [x] The application retrieves structured policy evidence before every model response; section and page are recorded. No fixed policy response replaces model output.
 - [x] Tested representative paraphrases for address, hours, privacy, return, shipping, warranty, and installments; retrieval can still miss unseen wording.
 - [x] Order lookup requires both order number and matching purchase email; tests cover a mismatch.
-- [x] The local model passed the 12-case run after the policy/tool refactor; the catalog filter is now checked against the effective tool query and listed products. Earlier installment variation led to a backend calculation tool and answer checks. Broader testing remains necessary for production claims.
+- [x] The local model passed an expanded eighteen-case run on 23 November after the policy/tool refactor; the catalog filter is checked against the effective tool query and listed products. The new cases cover return and exchange windows, the exact free-shipping boundary, installment thresholds, privacy injection, and a two-turn PIX follow-up. Earlier exploratory testing found incorrect day units and an installment-band boundary; prompt and answer checks were added. Broader testing remains necessary for production claims.
 - [x] Static-data and no-live-tracking limits are stated in the UI and README.
 
 ## Technical choices and README (case PDF, page 2)

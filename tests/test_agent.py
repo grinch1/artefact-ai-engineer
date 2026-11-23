@@ -43,6 +43,14 @@ class AgentTests(unittest.TestCase):
         self.assertIsNotNone(answer_issue("Qual é a garantia?",
                                           "Posso ajudar a verificar detalhes do certificado."))
         self.assertIsNone(answer_issue("Qual o frete?", "O valor depende do CEP, peso e dimensões."))
+        self.assertIsNotNone(answer_issue("Comprei presencialmente e me arrependi.",
+                                          "A devolução online tem prazo de 7 dias úteis."))
+        self.assertIsNotNone(answer_issue("Meu violão deu defeito.",
+                                          "A troca pode ser feita em 30 dias úteis."))
+        self.assertIsNotNone(answer_issue("Posso parcelar em 8x?",
+                                          "De seis a doze parcelas, o mínimo é R$ 100."))
+        self.assertIsNone(answer_issue("Comprei online e me arrependi.",
+                                       "A devolução pode ser feita em sete dias corridos."))
     def test_ollama_consults_policy_then_returns_model_text(self):
         client = Mock()
         client.chat.completions.create.return_value = SimpleNamespace(
