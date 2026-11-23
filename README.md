@@ -51,3 +51,5 @@ Run `python -m unittest discover -s tests -v`. GitHub Actions checks Python comp
 The case PDF requests a public GitHub link by replying to the email, while the recruitment email asks for a PDF through a Google Form by the end of 24 November 2026 (São Paulo time). Our delivery interpretation is to provide the repository link in the reply and a short English PDF with that link through the form, subject to recruiter clarification. Do not change the repository after submission.
 
 See [examples.md](examples.md) for five reproducible offline interactions. AI assistance: Codex helped inspect the case, implement the prototype, and draft documentation; the candidate must review the behavior, decisions, and final submission. With more time: verify actual LLM responses, add semantic retrieval evaluation, test Ollama and a second hosted provider, improve identity verification, and add safe deployment controls.
+
+Track the remaining case and submission requirements in [CHECKLIST.md](CHECKLIST.md).
