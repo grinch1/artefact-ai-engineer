@@ -40,7 +40,7 @@ Updated: 23 November 2026. `[x]` means verified, `[ ]` means open. Items marked 
 
 - [x] Public GitHub repository: https://github.com/grinch1/artefact-ai-engineer
 - [x] More than one genuine progress commit on `main`; no force push used.
-- [x] The current branch has ten passing unit tests locally, including policy prefetch before both model adapters. Recheck CI after pushing the model change.
+- [x] Ten unit tests pass, including policy prefetch before both model adapters. GitHub Actions passed Python compilation, tests, and Docker build for the Qwen3 model-change commit.
 - [x] Private case CSVs, internal policy PDF, ZIP, and API keys are excluded from version control.
 - [ ] Review the final repository contents and README as the candidate before submission.
 - [ ] Freeze the repository after the submission date and time; the case explicitly forbids later changes.
@@ -57,7 +57,7 @@ The PDF and email give different delivery channels. The planned interpretation i
 
 ## Next work, in order
 
-1. Review the Qwen3 14B examples and limits with the candidate; confirm CI for the model-change commit.
+1. Review the Qwen3 14B examples and limits with the candidate.
 2. Configure a hosted paid-model API key later and repeat the scenarios. Do not commit the key.
 3. Review from a fresh clone and, if available, run the container with the case data mounted read-only.
 4. Draft and inspect the English PDF, then submit through both channels and freeze the repository.
