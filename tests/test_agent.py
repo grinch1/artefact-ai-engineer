@@ -5,7 +5,7 @@ from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from agent import Agent, OllamaAgent, answer_issue
+from agent import Agent, OllamaAgent, answer_issue, default_application_rules, default_policy_facts
 
 
 class FakeStore:
@@ -36,6 +36,8 @@ class AgentTests(unittest.TestCase):
                                           "Se quiser que encaminhemos sua solicitação à equipe, avise."))
         self.assertIsNotNone(answer_issue("Qual a garantia?", "Posso consultar o catálogo para confirmar."))
         self.assertIsNotNone(answer_issue("Posso parcelar em 10x?", "Posso verificar outras opções."))
+        self.assertIsNotNone(answer_issue("Posso parcelar em 5x?", "Você pode pagar à vista ou usar outro método de pagamento."))
+        self.assertIsNotNone(answer_issue("Posso parcelar em 13x?", "Há métodos combinados acima de R$ 2.000."))
         self.assertIsNotNone(answer_issue("Como apago meus dados pessoais?",
                                           "Pode me informar seu e-mail antes de encaminhar?"))
         self.assertIsNotNone(answer_issue("Meu pedido 9 já foi enviado?",
@@ -65,8 +67,28 @@ class AgentTests(unittest.TestCase):
                                           "A devolução online tem prazo de 7 dias úteis."))
         self.assertIsNotNone(answer_issue("Meu violão deu defeito.",
                                           "A troca pode ser feita em 30 dias úteis."))
+        self.assertIsNotNone(answer_issue("Meu violão deu defeito.",
+                                          "A troca vale por 30 dias a partir do recebimento."))
+        self.assertIsNotNone(answer_issue("O violão deu defeito 45 dias após a compra. Posso trocar?",
+                                          "A troca não é possível; procure o fabricante."))
+        self.assertIsNone(answer_issue("O violão deu defeito 45 dias após a compra. Posso trocar?",
+                                       "A equipe humana precisa confirmar a relação entre troca e garantia legal de 90 dias."))
+        self.assertIsNotNone(answer_issue("O violão deu defeito 45 dias após a compra. Posso trocar?",
+                                          "A equipe humana precisa confirmar a troca após 30 dias."))
+        self.assertIsNotNone(answer_issue("O violão deu defeito 45 dias após a compra. Posso trocar?",
+                                          "O prazo de 31 a 90 dias requer confirmação; depois disso deve ser encaminhado ao fabricante."))
+        self.assertIsNotNone(answer_issue("Posso parcelar R$ 40,00 em 2x?",
+                                          "Sim! Mas a equipe precisa confirmar."))
+        self.assertIsNotNone(answer_issue("Posso parcelar R$ 40,00 em 2x?",
+                                          "Informe seu e-mail e número do pedido para confirmar."))
+        self.assertIsNotNone(answer_issue("Posso parcelar R$ 40,00 em 2x?",
+                                          "Compras abaixo de R$ 50 podem ser parceladas em até 12 vezes, com confirmação."))
+        self.assertIsNotNone(answer_issue("Meu violão deu defeito após 45 dias.",
+                                          "A garantia legal do fabricante é de 90 dias."))
         self.assertIsNotNone(answer_issue("Posso parcelar em 8x?",
                                           "De seis a doze parcelas, o mínimo é R$ 100."))
+        self.assertIsNotNone(answer_issue("Posso pagar R$ 400 em 5x?",
+                                          "Compras de até R$ 400 podem ser divididas em 5 vezes."))
         self.assertIsNone(answer_issue("Comprei online e me arrependi.",
                                        "A devolução pode ser feita em sete dias corridos."))
     def test_ollama_consults_policy_then_returns_model_text(self):
@@ -82,6 +104,20 @@ class AgentTests(unittest.TestCase):
         messages = client.chat.completions.create.call_args.kwargs["messages"]
         self.assertIn("Fonte de teste", messages[1]["content"])
         self.assertEqual(agent.last_policy_sections, ["4.1 (p. 4)"])
+
+    def test_numeric_guard_uses_versioned_company_facts(self):
+        facts = default_policy_facts()
+        changed = {**facts, "4.1": {**facts["4.1"], "return_window_calendar_days": 8}}
+        self.assertIsNotNone(answer_issue("Posso devolver?", "O prazo é de 8 dias úteis.", policy_facts=changed))
+        self.assertIsNone(answer_issue("Posso devolver?", "O prazo é de 7 dias úteis.", policy_facts=changed))
+
+    def test_capability_guard_uses_versioned_application_rules(self):
+        rules = default_application_rules()
+        enabled = [dict(item, available=True) if item["id"] == "external_shipping_quote" else item
+                   for item in rules]
+        answer = "Posso calcular o frete com seu CEP."
+        self.assertIsNotNone(answer_issue("Quanto custa o frete?", answer, application_rules=rules))
+        self.assertIsNone(answer_issue("Quanto custa o frete?", answer, application_rules=enabled))
 
     def test_local_reasoning_is_model_specific(self):
         with patch("openai.OpenAI"):

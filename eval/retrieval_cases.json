@@ -1,0 +1,157 @@
+[
+  {
+    "id": "accessories",
+    "question": "Vocês vendem cordas avulsas para violão?",
+    "expected_section": "1"
+  },
+  {
+    "id": "address",
+    "question": "Onde fica a loja física?",
+    "expected_section": "1.2"
+  },
+  {
+    "id": "location",
+    "question": "Como chego à loja em Campo Grande?",
+    "expected_section": "1.2"
+  },
+  {
+    "id": "opening_hours",
+    "question": "Qual é o horário de funcionamento?",
+    "expected_section": "2"
+  },
+  {
+    "id": "sunday",
+    "question": "Abrem aos domingos?",
+    "expected_section": "2"
+  },
+  {
+    "id": "holiday",
+    "question": "No feriado vocês atendem?",
+    "expected_section": "2"
+  },
+  {
+    "id": "payment_methods",
+    "question": "Quais formas de pagamento aceitam?",
+    "expected_section": "3"
+  },
+  {
+    "id": "boleto",
+    "question": "Posso pagar com boleto?",
+    "expected_section": "3"
+  },
+  {
+    "id": "installment",
+    "question": "Posso parcelar em 8 vezes sem juros?",
+    "expected_section": "3.1"
+  },
+  {
+    "id": "small_installment",
+    "question": "Uma compra de R$ 40 pode ser dividida em duas vezes?",
+    "expected_section": "3.1"
+  },
+  {
+    "id": "online_return",
+    "question": "Comprei pela internet e me arrependi. Como devolver?",
+    "expected_section": "4.1"
+  },
+  {
+    "id": "refund",
+    "question": "Quando recebo o reembolso da devolução online?",
+    "expected_section": "4.1"
+  },
+  {
+    "id": "defect",
+    "question": "Meu instrumento apresentou defeito de fabricação. Posso trocar?",
+    "expected_section": "4.2"
+  },
+  {
+    "id": "preference_exchange",
+    "question": "Quero trocar meu violão por outro modelo ou cor.",
+    "expected_section": "4.3"
+  },
+  {
+    "id": "exchange_exclusion",
+    "question": "Um instrumento personalizado pode ser trocado?",
+    "expected_section": "4.4"
+  },
+  {
+    "id": "local_shipping",
+    "question": "Quanto custa entrega em Campo Grande?",
+    "expected_section": "5.1"
+  },
+  {
+    "id": "shipping_boundary",
+    "question": "Pedido de R$ 500 exatos tem frete grátis na cidade?",
+    "expected_section": "5.1"
+  },
+  {
+    "id": "outbound_shipping",
+    "question": "Quanto custa mandar para outra cidade?",
+    "expected_section": "5.2"
+  },
+  {
+    "id": "outside_metro",
+    "question": "Qual frete para fora da região metropolitana?",
+    "expected_section": "5.2"
+  },
+  {
+    "id": "tracking",
+    "question": "Como recebo o código de rastreamento?",
+    "expected_section": "5.3"
+  },
+  {
+    "id": "promotions",
+    "question": "Quais produtos estão com promoção vigente?",
+    "expected_section": "6.1"
+  },
+  {
+    "id": "pix_promotion",
+    "question": "Posso somar promoção com desconto PIX?",
+    "expected_section": "6.2"
+  },
+  {
+    "id": "service_scope",
+    "question": "Vocês indicam lojas parceiras?",
+    "expected_section": "7.1"
+  },
+  {
+    "id": "out_of_stock",
+    "question": "O produto está esgotado. Há alternativa?",
+    "expected_section": "7.3"
+  },
+  {
+    "id": "expired_promotion",
+    "question": "Posso manter o preço de uma promoção que acabou?",
+    "expected_section": "7.3"
+  },
+  {
+    "id": "legal_warranty",
+    "question": "Qual a garantia legal do instrumento?",
+    "expected_section": "8.1"
+  },
+  {
+    "id": "manufacturer_warranty",
+    "question": "Quanto tempo dura a garantia do fabricante?",
+    "expected_section": "8.2"
+  },
+  {
+    "id": "warranty_exclusions",
+    "question": "Queda ou mau uso estão cobertos pela garantia?",
+    "expected_section": "8.3"
+  },
+  {
+    "id": "data_deletion",
+    "question": "Como apago meus dados pessoais?",
+    "expected_section": "9"
+  },
+  {
+    "id": "marketing_consent",
+    "question": "Vocês mandam propaganda sem consentimento?",
+    "expected_section": "9"
+  },
+  {
+    "id": "policy_ambiguity",
+    "question": "O manual tem regras conflitantes. O que vale?",
+    "expected_section": "10"
+  }
+]

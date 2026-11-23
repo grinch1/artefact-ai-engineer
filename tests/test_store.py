@@ -26,9 +26,9 @@ class StoreTests(unittest.TestCase):
         cls.store.policy_sections = [{"page": 4, "section": "4.1",
                                       "title": "Direito de Arrependimento",
                                       "text": "Devolução em 7 (sete) dias após o recebimento."}]
-        policy = json.loads((Path(__file__).resolve().parents[1] / "policy.json").read_text())
+        policy = json.loads((Path(__file__).resolve().parents[1] / "policies.json").read_text())
         cls.store.policy_facts = {item["section"]: item.get("facts", {})
-                                  for item in policy["sections"]}
+                                  for item in policy["company_policies"]["sections"]}
         cls.store._build_db()
 
     def test_available_guitars_under_budget(self):

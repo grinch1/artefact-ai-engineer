@@ -2,7 +2,7 @@
 
 GET_POLICY = {
     "type": "function", "name": "get_policy",
-    "description": "Find relevant customer-facing policy rules from versioned policy.json with source section, page and typed facts.",
+    "description": "Find relevant customer-facing company rules from versioned policies.json with source section, page and typed facts.",
     "parameters": {
         "type": "object",
         "properties": {"topic": {"type": "string"}},

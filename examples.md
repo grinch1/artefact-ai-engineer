@@ -1,6 +1,6 @@
 # Five real agent conversations
 
-Recorded on 23 November 2026 with `gpt-oss:20b` on the private Mainframe, using versioned `policy.json` and the supplied CSV snapshot loaded into SQLite. Answers are selected raw model outputs from real evaluation runs, with trailing spaces removed for Markdown display. Before every answer, the application retrieved relevant policy sections. Model tool calls are shown separately. These observations do not guarantee performance on arbitrary questions.
+Recorded on 23 November 2026 with `gpt-oss:20b` on the private Mainframe, using the reviewed policy content now organized in `policies.json` and the supplied CSV snapshot loaded into SQLite. Answers are selected raw model outputs from real evaluation runs before the policy-file reorganization, with trailing spaces removed for Markdown display. Before every answer, the application retrieved relevant policy sections. Model tool calls are shown separately. These observations do not guarantee performance on arbitrary questions.
 
 ## 1. In-stock acoustic guitars within budget
 

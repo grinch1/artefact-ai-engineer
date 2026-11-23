@@ -55,18 +55,25 @@ class Store:
                 raise FileNotFoundError(f"Expected one *{name}.csv in {self.data_dir}")
             with matches[0].open(newline="", encoding="utf-8-sig") as f:
                 self.tables[name] = list(csv.DictReader(f))
-        policy_file = Path(__file__).resolve().with_name("policy.json")
+        policy_file = Path(__file__).resolve().with_name("policies.json")
         policy = json.loads(policy_file.read_text(encoding="utf-8"))
-        if policy.get("schema_version") != 1 or not policy.get("sections"):
-            raise ValueError("Unsupported or empty policy.json")
+        company = policy.get("company_policies", {})
+        agent = policy.get("agent_policies", {})
+        application = policy.get("application_rules", {})
+        if (policy.get("schema_version") != 2 or not company.get("sections")
+                or not agent.get("rules") or not application.get("capabilities")):
+            raise ValueError("Unsupported or incomplete policies.json")
         source_pdfs = list(self.data_dir.glob("*.pdf"))
         if len(source_pdfs) == 1:
             source_hash = hashlib.sha256(source_pdfs[0].read_bytes()).hexdigest()
-            if source_hash != policy["source_pdf_sha256"]:
-                raise ValueError("policy.json does not match the supplied policy PDF")
-        self.policy_sections = policy["sections"]
+            if source_hash != company["source"]["sha256"]:
+                raise ValueError("policies.json does not match the supplied policy PDF")
+        self.policy_config = policy
+        self.policy_sections = company["sections"]
         self.policy_facts = {item["section"]: item.get("facts", {})
                              for item in self.policy_sections}
+        self.agent_policies = agent["rules"]
+        self.application_rules = application["capabilities"]
         self.categories = {r["category_id"]: r["name"] for r in self.tables["categories"]}
         self.promotions = {}
         for row in self.tables["promotions"]:
@@ -201,7 +208,7 @@ class Store:
         return {"matches": [dict(item, text=customer_safe_policy_text(item["text"][:3000]),
                                  facts=getattr(self, "policy_facts", {}).get(item["section"], {}))
                             for _, _, item in scored[:3]],
-                "source": "versioned policy.json, derived from supplied policy PDF"}
+                "source": "company_policies in versioned policies.json, derived from supplied policy PDF"}
 
     def check_installment(self, price_brl: float, installments: int) -> dict:
         """Calculate one requested option from the structured policy, not model arithmetic."""

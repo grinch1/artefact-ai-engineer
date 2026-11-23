@@ -8,13 +8,13 @@ Updated: 23 November 2026. `[x]` means verified, `[ ]` means open. Items marked 
 - [x] Text message interface through the web chat and `POST /chat`; CLI also available.
 - [x] Store persona and tone specified in the agent instructions and shown in the UI.
 - [x] Product, price, stock, active promotion, and order lookup from the supplied CSV snapshot loaded into SQLite.
-- [x] The supplied PDF was reviewed into versioned `policy.json` with section/page references and typed facts; startup checks the PDF hash when the original is present.
+- [x] `policies.json` separates PDF-derived `company_policies`, candidate-designed `agent_policies`, and actual `application_rules`; startup checks the PDF hash when the original is present.
 - [x] A real-model accessory example redirects without claiming that accessories are sold.
 - [x] Compared Qwen 2.5 7B, Qwen3 14B and gpt-oss 20B on the Mainframe. gpt-oss 20B is the selected local model; the hosted model still needs an API-key test.
 - [x] The application retrieves structured policy evidence before every model response; section and page are recorded. No fixed policy response replaces model output.
-- [x] Tested representative paraphrases for address, hours, privacy, return, shipping, warranty, and installments; retrieval can still miss unseen wording.
+- [x] The independent retrieval evaluator found the expected company section in the top three for 31/31 customer phrasings; unseen wording can still miss.
 - [x] Order lookup requires both order number and matching purchase email; tests cover a mismatch.
-- [x] The local model passed an expanded eighteen-case run on 23 November after the policy/tool refactor; the catalog filter is checked against the effective tool query and listed products. The new cases cover return and exchange windows, the exact free-shipping boundary, installment thresholds, privacy injection, and a two-turn PIX follow-up. Manual review also caught unsupported offers, unrequested PIX prices, and a warranty omission during repair; prompt, answer, and evaluator checks were added. Broader testing remains necessary for production claims.
+- [x] The gpt-oss 20B evaluator has 26 scenarios and repeated fresh runs. Expanded runs scored 51/52 and then 52/52, but manual review found a missed legal-warranty omission in the latter. The stronger check passed 3/3 targeted retests. Broader testing remains open; no production reliability claim is made.
 - [x] Static-data and no-live-tracking limits are stated in the UI and README.
 
 ## Technical choices and README (case PDF, page 2)
@@ -41,8 +41,8 @@ Updated: 23 November 2026. `[x]` means verified, `[ ]` means open. Items marked 
 
 - [x] Public GitHub repository: https://github.com/grinch1/artefact-ai-engineer
 - [x] More than one genuine progress commit on `main`; no force push used.
-- [x] Twenty-two unit tests pass locally and from a fresh clone, including policy retrieval, installment calculations, currency rounding and strict tool routing. [GitHub Actions passed](https://github.com/grinch1/artefact-ai-engineer/actions/runs/45266497017) compilation, tests and Docker build for refactor commit `3c50834`.
-- [x] Private case CSVs, internal PDF, ZIP, and API keys are excluded from version control; the reviewed customer-facing `policy.json` is public.
+- [x] Twenty-five unit tests pass locally, including policy provenance, fact-driven numerical guards, retrieval, installments, rounding, and strict tool routing. Previous commits passed GitHub Actions compilation, tests, and Docker build; the current commit needs its own CI check.
+- [x] Private case CSVs, internal PDF, ZIP, and API keys are excluded from version control; the reviewed customer-facing `policies.json` is public.
 - [ ] Review the final repository contents and README as the candidate before submission.
 - [ ] Freeze the repository after the submission date and time; the case explicitly forbids later changes.
 

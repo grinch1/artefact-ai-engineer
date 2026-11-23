@@ -1,0 +1,31 @@
+{"id": "accessories", "question": "Vocês vendem cordas avulsas para violão?", "expected_section": "1", "retrieved_sections": ["1"], "hit_at_3": true}
+{"id": "address", "question": "Onde fica a loja física?", "expected_section": "1.2", "retrieved_sections": ["1.2"], "hit_at_3": true}
+{"id": "location", "question": "Como chego à loja em Campo Grande?", "expected_section": "1.2", "retrieved_sections": ["1.2", "5.1", "5.2"], "hit_at_3": true}
+{"id": "opening_hours", "question": "Qual é o horário de funcionamento?", "expected_section": "2", "retrieved_sections": ["2"], "hit_at_3": true}
+{"id": "sunday", "question": "Abrem aos domingos?", "expected_section": "2", "retrieved_sections": ["2"], "hit_at_3": true}
+{"id": "holiday", "question": "No feriado vocês atendem?", "expected_section": "2", "retrieved_sections": ["2", "7.1"], "hit_at_3": true}
+{"id": "payment_methods", "question": "Quais formas de pagamento aceitam?", "expected_section": "3", "retrieved_sections": ["3"], "hit_at_3": true}
+{"id": "boleto", "question": "Posso pagar com boleto?", "expected_section": "3", "retrieved_sections": ["3"], "hit_at_3": true}
+{"id": "installment", "question": "Posso parcelar em 8 vezes sem juros?", "expected_section": "3.1", "retrieved_sections": ["3.1", "3", "7.1"], "hit_at_3": true}
+{"id": "small_installment", "question": "Uma compra de R$ 40 pode ser dividida em duas vezes?", "expected_section": "3.1", "retrieved_sections": ["3.1", "4.1"], "hit_at_3": true}
+{"id": "online_return", "question": "Comprei pela internet e me arrependi. Como devolver?", "expected_section": "4.1", "retrieved_sections": ["4.1", "3", "3.1"], "hit_at_3": true}
+{"id": "refund", "question": "Quando recebo o reembolso da devolução online?", "expected_section": "4.1", "retrieved_sections": ["4.1"], "hit_at_3": true}
+{"id": "defect", "question": "Meu instrumento apresentou defeito de fabricação. Posso trocar?", "expected_section": "4.2", "retrieved_sections": ["4.2", "4.4", "1"], "hit_at_3": true}
+{"id": "preference_exchange", "question": "Quero trocar meu violão por outro modelo ou cor.", "expected_section": "4.3", "retrieved_sections": ["4.3", "4.2", "4.4"], "hit_at_3": true}
+{"id": "exchange_exclusion", "question": "Um instrumento personalizado pode ser trocado?", "expected_section": "4.4", "retrieved_sections": ["4.4", "1", "4.2"], "hit_at_3": true}
+{"id": "local_shipping", "question": "Quanto custa entrega em Campo Grande?", "expected_section": "5.1", "retrieved_sections": ["5.1", "5.2", "1.2"], "hit_at_3": true}
+{"id": "shipping_boundary", "question": "Pedido de R$ 500 exatos tem frete grátis na cidade?", "expected_section": "5.1", "retrieved_sections": ["5.1", "5.2", "4.1"], "hit_at_3": true}
+{"id": "outbound_shipping", "question": "Quanto custa mandar para outra cidade?", "expected_section": "5.2", "retrieved_sections": ["5.2"], "hit_at_3": true}
+{"id": "outside_metro", "question": "Qual frete para fora da região metropolitana?", "expected_section": "5.2", "retrieved_sections": ["5.2", "5.1", "4.1"], "hit_at_3": true}
+{"id": "tracking", "question": "Como recebo o código de rastreamento?", "expected_section": "5.3", "retrieved_sections": ["5.3"], "hit_at_3": true}
+{"id": "promotions", "question": "Quais produtos estão com promoção vigente?", "expected_section": "6.1", "retrieved_sections": ["6.1", "6.2", "7.3"], "hit_at_3": true}
+{"id": "pix_promotion", "question": "Posso somar promoção com desconto PIX?", "expected_section": "6.2", "retrieved_sections": ["6.2", "6.1", "7.3"], "hit_at_3": true}
+{"id": "service_scope", "question": "Vocês indicam lojas parceiras?", "expected_section": "7.1", "retrieved_sections": ["3", "3.1", "7.1"], "hit_at_3": true}
+{"id": "out_of_stock", "question": "O produto está esgotado. Há alternativa?", "expected_section": "7.3", "retrieved_sections": ["7.3"], "hit_at_3": true}
+{"id": "expired_promotion", "question": "Posso manter o preço de uma promoção que acabou?", "expected_section": "7.3", "retrieved_sections": ["6.2", "6.1", "7.3"], "hit_at_3": true}
+{"id": "legal_warranty", "question": "Qual a garantia legal do instrumento?", "expected_section": "8.1", "retrieved_sections": ["8.1", "8.2", "8.3"], "hit_at_3": true}
+{"id": "manufacturer_warranty", "question": "Quanto tempo dura a garantia do fabricante?", "expected_section": "8.2", "retrieved_sections": ["8.2", "8.1", "8.3"], "hit_at_3": true}
+{"id": "warranty_exclusions", "question": "Queda ou mau uso estão cobertos pela garantia?", "expected_section": "8.3", "retrieved_sections": ["8.3", "8.1", "8.2"], "hit_at_3": true}
+{"id": "data_deletion", "question": "Como apago meus dados pessoais?", "expected_section": "9", "retrieved_sections": ["9"], "hit_at_3": true}
+{"id": "marketing_consent", "question": "Vocês mandam propaganda sem consentimento?", "expected_section": "9", "retrieved_sections": ["9"], "hit_at_3": true}
+{"id": "policy_ambiguity", "question": "O manual tem regras conflitantes. O que vale?", "expected_section": "10", "retrieved_sections": ["10", "1.2", "4.1"], "hit_at_3": true}

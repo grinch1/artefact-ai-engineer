@@ -1,18 +1,21 @@
-# Local-model evaluation, 23 November 2026
+# Local model evaluation, 23 November 2026
 
-Model: `gpt-oss:20b` through Ollama on the Mainframe. Each scenario starts with a fresh agent; the promotion follow-up deliberately uses two turns in one conversation. The original CSV snapshot and the reviewed `policy.json` were loaded by the application. No customer email or order status is included here.
+## What is measured
 
-The exploratory pass used 19 prompts across opening hours, returns, defect handling, free-shipping and installment boundaries, order privacy, prompt injection, and out-of-scope requests. Manual review found three factual errors: a return window described as business days instead of calendar days, a defect exchange window described as business days, and the R$ 100 installment band described as starting at six rather than seven installments. Reviews of nominally passing eighteen-case runs also found unsupported offers to collect order identifiers, forward an inquiry, start a return, or provide unverified contact channels. The model sometimes added unrequested PIX prices or offered a product-specific warranty it could not verify. One repair removed the legal warranty duration while fixing another issue; the evaluator caught that omission. Some automated exploratory flags were wording mismatches, such as `sete` versus `7`; they were not counted as model failures.
+The test separates policy retrieval from model responses. `eval/retrieval_cases.json` contains 31 customer phrasings with an expected company-policy section. `scripts/evaluate_retrieval.py` checks whether that section appears in the top three retrieved results, without calling a language model. The observed result was 31/31 hits.
 
-The agent instructions now state the policy units and boundaries explicitly. `answer_issue` rejects the observed unsupported claims and asks the model to rewrite its own response. No fixed customer answer was added. The affected questions were checked again against the real model.
+`scripts/evaluate_local.py` runs 26 customer scenarios with `gpt-oss:20b` through Ollama on the private Mainframe. `--repeat 2` creates a fresh agent for each of 52 model runs. Scenarios cover catalog accuracy, orders without identity verification, active promotion and PIX, policy boundaries, uncertain cases, prompt injection, and a two-turn follow-up. JSON lines record the final answer, policy sections, tool calls, rejected drafts, and targeted checks. The evaluator exits nonzero on failed checks. The private case CSVs remain outside the repository; the published cases use no customer email or verified order status.
 
-The reproducible evaluator is `scripts/evaluate_local.py`. It checks 18 scenarios, records the model's answer, policy sections, tool calls, rejected drafts, and targeted assertions as JSON lines, and exits nonzero on a failed assertion. The final reviewed run passed 18 of 18 checks; three draft answers were rejected and rewritten before reaching the customer. The raw run is in `evidence/gpt-oss-20b-2026-11-23.jsonl`. The 22 unit tests passed. The full-run count is a regression result for this model and snapshot, not a claim of perfect reliability or coverage of unseen wording.
+These checks measure specific claims, not general correctness. The first expanded run had false alarms from literal word checks (`sete` versus `7`, and a conditional mention of tracking). Manual review also found real errors that passed the checks: treating R$ 400 as a maximum purchase for five installments, moving the defect-exchange start from purchase to receipt, approving a R$ 40 installment before human confirmation, sending a day-45 defect case definitively to the manufacturer, and suggesting unrequested payment alternatives. Each finding became a policy or evaluator change and a local regression assertion. This is why the raw answers and rejected drafts are retained for review.
 
-To repeat with the supplied private case data:
+The independent retrieval run passed 31/31 in `evidence/policy-retrieval-2026-11-23.jsonl`. One expanded model run passed 51/52 checks in `evidence/gpt-oss-20b-expanded-2026-11-23.jsonl`; the failure omitted the 90-day legal warranty while asking for human confirmation on a day-45 defect. A later full run passed 52/52 automated checks in `evidence/gpt-oss-20b-postfix-2026-11-23.jsonl`, but manual review found another day-45 answer that mentioned “31 to 90 days” without actually explaining the legal warranty. The evaluator and answer gate now require an explicit legal-warranty statement; the affected case passed 3/3 fresh repetitions in `evidence/gpt-oss-20b-defect-recheck-2026-11-23.jsonl`. The earlier eighteen-case run remains in `evidence/gpt-oss-20b-2026-11-23.jsonl`. A full repeated run after that last correction remains open. These counts demonstrate behavior for the measured prompts and snapshot, not perfect reliability on unseen requests.
+
+## Repeat locally
 
 ```sh
-python scripts/evaluate_local.py --data-dir "$DATA_DIR" --model gpt-oss:20b > evaluation.jsonl
+python scripts/evaluate_retrieval.py --data-dir "$DATA_DIR" > retrieval.jsonl
+python scripts/evaluate_local.py --data-dir "$DATA_DIR" --model gpt-oss:20b --repeat 2 > model.jsonl
 python -m unittest discover -s tests -v
 ```
 
-The remaining production checks are a larger paraphrase set, repeated runs to measure variability, and a separate comparison with a hosted model. The supplied order and catalog files are snapshots, so these tests do not establish live inventory or carrier tracking.
+For the next evaluation cycle, add held-out paraphrases and longer conversations, compare a hosted model on the same cases, and measure failures and latency separately. The static CSV snapshot cannot verify live inventory, order state, or carrier tracking.
