@@ -34,7 +34,10 @@ class ApiTests(unittest.TestCase):
 
     def test_page_and_health(self):
         self.assertEqual(self.client.get("/").status_code, 200)
+        self.assertEqual(self.client.get("/style.css").status_code, 200)
+        self.assertEqual(self.client.get("/app.js").status_code, 200)
         self.assertEqual(self.client.get("/health").json(), {"status": "ok"})
+        self.assertEqual(self.client.get("/mode").json(), {"mode": "offline"})
 
     def test_order_without_email_stays_private(self):
         result = self.client.post("/chat", json={"session_id": "demo", "message": "Meu pedido 9 já foi enviado?"})

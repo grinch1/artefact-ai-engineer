@@ -37,6 +37,16 @@ def home():
     return FileResponse(WEB_DIR / "index.html")
 
 
+@app.get("/style.css", include_in_schema=False)
+def stylesheet():
+    return FileResponse(WEB_DIR / "style.css", media_type="text/css")
+
+
+@app.get("/app.js", include_in_schema=False)
+def browser_script():
+    return FileResponse(WEB_DIR / "app.js", media_type="text/javascript")
+
+
 @lru_cache(maxsize=1)
 def get_store() -> Store:
     path = os.getenv("DATA_DIR", "/data")
@@ -50,6 +60,11 @@ def health():
         return {"status": "ok"}
     except FileNotFoundError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@app.get("/mode")
+def mode():
+    return {"mode": os.getenv("AGENT_MODE", "offline")}
 
 
 @app.post("/chat", response_model=ChatResponse)

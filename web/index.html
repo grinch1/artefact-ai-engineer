@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Empório da Música · Atendimento</title>
-  <link rel="stylesheet" href="/static/style.css">
-  <script src="/static/app.js" defer></script>
+  <link rel="stylesheet" href="./style.css">
+  <script src="./app.js" defer></script>
 </head>
 <body>
   <div class="shell">
@@ -19,15 +19,16 @@
       </div>
     </aside>
     <main class="workspace">
-      <header class="topbar"><span>Conversa</span><span class="status"><span class="status-dot"></span> Protótipo</span></header>
+      <header class="topbar"><span>Conversa</span><span class="status"><span class="status-dot"></span><span id="mode-label">Carregando modo…</span></span></header>
       <section class="conversation" aria-label="Conversa com o assistente">
+        <div id="local-note" class="local-note" hidden>Esta página funciona pelo servidor do projeto. <a href="http://127.0.0.1:8000/">Abrir o chat em 127.0.0.1:8000 →</a></div>
         <div id="messages" class="messages" aria-live="polite">
-          <div class="message assistant intro"><span class="speaker">EMPÓRIO</span><p>Oi! Sou o assistente virtual da Empório da Música. Posso ajudar a encontrar um instrumento, consultar um pedido ou explicar as políticas da loja.</p></div>
+          <div class="message assistant intro"><span class="speaker">EMPÓRIO DA MÚSICA · ASSISTENTE VIRTUAL</span><h1>Como posso ajudar?</h1><p>Encontre instrumentos, confira um pedido ou tire dúvidas sobre a loja.</p></div>
         </div>
         <div id="suggestions" class="suggestions" aria-label="Perguntas sugeridas">
-          <button type="button" data-prompt="Quais violões vocês têm em estoque por até R$ 1.000?">Violões até R$ 1.000 <span>↗</span></button>
-          <button type="button" data-prompt="O ukulele Ohana CK-20 está em promoção? E no PIX?">Promoção e PIX <span>↗</span></button>
-          <button type="button" data-prompt="Comprei online e me arrependi. Posso devolver?">Devolução online <span>↗</span></button>
+          <button type="button" data-prompt="Quais violões vocês têm em estoque por até R$ 1.000?"><span>Encontrar violões até R$ 1.000</span><b>↗</b></button>
+          <button type="button" data-prompt="O ukulele Ohana CK-20 está em promoção? E no PIX?"><span>Conferir promoção e pagamento no PIX</span><b>↗</b></button>
+          <button type="button" data-prompt="Comprei online e me arrependi. Posso devolver?"><span>Entender devolução de compra online</span><b>↗</b></button>
         </div>
       </section>
       <form id="chat-form" class="composer">

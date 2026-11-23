@@ -4,8 +4,22 @@ const sendButton = document.querySelector('#send-button');
 const messages = document.querySelector('#messages');
 const suggestions = document.querySelector('#suggestions');
 const conversation = document.querySelector('.conversation');
-const sessionId = sessionStorage.getItem('emporio-session') || crypto.randomUUID();
-sessionStorage.setItem('emporio-session', sessionId);
+const isFile = location.protocol === 'file:';
+let sessionId = crypto.randomUUID();
+if (isFile) {
+  document.querySelector('#local-note').hidden = false;
+  document.querySelector('#chat-form').hidden = true;
+  document.querySelector('#suggestions').hidden = true;
+  document.querySelector('#mode-label').textContent = 'Abra pelo servidor';
+} else {
+  sessionId = sessionStorage.getItem('emporio-session') || sessionId;
+  sessionStorage.setItem('emporio-session', sessionId);
+  fetch('/mode').then(response => response.json()).then(data => {
+    document.querySelector('#mode-label').textContent = data.mode === 'openai' ? 'IA · modelo hospedado' : 'Demonstração · sem IA';
+  }).catch(() => {
+    document.querySelector('#mode-label').textContent = 'Modo indisponível';
+  });
+}
 
 function addMessage(role, text) {
   const item = document.createElement('div');

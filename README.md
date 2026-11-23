@@ -15,7 +15,7 @@ export AGENT_MODE=offline
 uvicorn api:app --host 127.0.0.1 --port 8000
 ```
 
-Open `http://127.0.0.1:8000/` for the simple chat interface, `http://127.0.0.1:8000/docs` for API documentation, or call:
+Open `http://127.0.0.1:8000/` for the chat interface, `http://127.0.0.1:8000/docs` for API documentation, or call the API below. Opening `web/index.html` directly as a `file://` URL only displays an instruction to start the server; the chat needs FastAPI to respond.
 
 ```bash
 curl -s http://127.0.0.1:8000/health
