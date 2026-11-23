@@ -26,7 +26,7 @@ In another terminal:
 ```bash
 export AGENT_MODE=ollama
 export OLLAMA_BASE_URL=http://127.0.0.1:11435/v1
-export OLLAMA_MODEL=qwen3:14b
+export OLLAMA_MODEL=gpt-oss:20b
 uvicorn api:app --host 127.0.0.1 --port 8000
 ```
 
@@ -52,7 +52,7 @@ docker run --rm -p 8000:8000 -e AGENT_MODE=openai -e OPENAI_API_KEY \
 
 The PDF is split into sections, ranked by a transparent keyword score, and returned with page and section numbers. Before **every** model answer, the application calls `get_policy` with the customer's question and passes up to three relevant excerpts to the model. The model may make additional tool calls. Retrieval is deterministic, but the customer-facing response is always model-generated. This keeps the evaluation honest: an incorrect interpretation remains visible as a failure, not replaced with a scripted answer. The small manual does not yet need an external vector database; section-level keyword retrieval can still miss paraphrases.
 
-The policy prefetch is a grounding step, not a guarantee of compliance. In an initial Qwen 2.5 7B trial, the model invented accessory availability and misapplied installment minimums even after seeing the relevant section. Qwen3 14B is the selected local model because it handled those rules better in a like-for-like trial. Its wording still varies: one repeated answer rejected 10x correctly but misstated the value of a suggested 6x installment. We tightened the instruction to focus on the option asked, and the evaluator checks that observed failure pattern; manual review remains necessary. A paid hosted model remains a later option. No production readiness is claimed.
+The policy prefetch is a grounding step, not a guarantee of compliance. Local trials compared Qwen 2.5 7B, Qwen3 14B and `gpt-oss:20b` on the same Mainframe. `gpt-oss:20b` is the selected local model, with Ollama reasoning set to `medium`; Qwen3 remains selectable through `OLLAMA_MODEL`. A retrieval bug in the first implementation matched word fragments (for example, `até` inside `atendimento`), which could rank irrelevant sections above the installment rules. Policy matching now uses normalized word tokens and title weighting. The final nine-scenario local run passed in about 26 seconds, but an earlier run correctly rejected 10x and then suggested an invalid installment alternative. The instruction now confines installment answers to the requested quantity, and the evaluator flags unsolicited alternative quantities. This small suite and manual review do not establish general compliance. A paid hosted model remains a later option. No production readiness is claimed.
 
 The PDF has inconsistent phone and email details across sections, so the agent is instructed not to volunteer them. The CSVs are static snapshots, not live inventory or carrier tracking. Sessions reset on restart. This prototype has no authentication or rate limiting and should not be exposed publicly. Matching a purchase email is a demonstration guard, not strong identity verification. A hosted model would require appropriate customer-data controls.
 

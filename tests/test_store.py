@@ -51,6 +51,17 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(result["matches"][0]["page"], 4)
         self.assertIn("7 (sete) dias", result["matches"][0]["text"])
 
+    def test_policy_ranking_ignores_word_fragments_and_generic_product(self):
+        store = Store.__new__(Store)
+        store.policy_sections = [
+            {"page": 3, "section": "3.1", "title": "Regras de parcelamento",
+             "text": "Parcelamento em 10x: parcela mínima de R$ 100,00."},
+            {"page": 6, "section": "7", "title": "Atendimento",
+             "text": "Atendimento de produto na loja."},
+        ]
+        self.assertEqual(store.get_policy("Posso parcelar 10x um produto?")["matches"][0]["section"], "3.1")
+        self.assertEqual(store.get_policy("até")["matches"], [])
+
 
 if __name__ == "__main__":
     unittest.main()

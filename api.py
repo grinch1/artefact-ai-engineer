@@ -64,7 +64,7 @@ def health():
 @app.get("/mode")
 def mode():
     selected = os.getenv("AGENT_MODE", "ollama")
-    model = (os.getenv("OLLAMA_MODEL", "qwen3:14b") if selected == "ollama"
+    model = (os.getenv("OLLAMA_MODEL", "gpt-oss:20b") if selected == "ollama"
              else os.getenv("OPENAI_MODEL", "gpt-5.4-mini") if selected == "openai" else None)
     return {"mode": selected, "model": model}
 
@@ -83,7 +83,7 @@ def chat(request: ChatRequest):
                         raise HTTPException(status_code=503, detail="OPENAI_API_KEY is required")
                     agent = Agent(store, os.getenv("OPENAI_MODEL", "gpt-5.4-mini"))
                 elif mode == "ollama":
-                    agent = OllamaAgent(store, os.getenv("OLLAMA_MODEL", "qwen3:14b"),
+                    agent = OllamaAgent(store, os.getenv("OLLAMA_MODEL", "gpt-oss:20b"),
                                          os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11435/v1"))
                 else:
                     raise HTTPException(status_code=503, detail="Unsupported AGENT_MODE")

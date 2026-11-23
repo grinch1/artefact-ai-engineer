@@ -10,11 +10,11 @@ Updated: 23 November 2026. `[x]` means verified, `[ ]` means open. Items marked 
 - [x] Product, price, stock, active promotion, and order lookup from the supplied CSV snapshot loaded into SQLite.
 - [x] Store policy lookup from the supplied PDF, separate from structured data tools.
 - [x] A real-model accessory example redirects without claiming that accessories are sold.
-- [x] Compared Qwen 2.5 7B and Qwen3 14B on the Mainframe. Qwen3 14B is the selected local model; the hosted model still needs an API-key test.
+- [x] Compared Qwen 2.5 7B, Qwen3 14B and gpt-oss 20B on the Mainframe. gpt-oss 20B is the selected local model; the hosted model still needs an API-key test.
 - [x] The application retrieves policy PDF evidence before every model response; section and page are recorded. No fixed policy response replaces model output.
 - [ ] **Partial:** Evaluate section-level keyword retrieval across paraphrases and ambiguous questions; it can still miss relevant passages.
 - [x] Order lookup requires both order number and matching purchase email; tests cover a mismatch.
-- [ ] **Partial:** Qwen3 14B answered the selected policy cases in the recorded examples, but a repeated run misstated an alternative installment value. The nine-case suite and manual review do not establish general compliance.
+- [ ] **Partial:** gpt-oss 20B passed the final nine-case local run, but an earlier run suggested an invalid installment alternative. The instruction and evaluator now address this observed error; repeated and broader testing remains necessary.
 - [x] Static-data and no-live-tracking limits are stated in the UI and README.
 
 ## Technical choices and README (case PDF, page 2)
@@ -31,7 +31,7 @@ Updated: 23 November 2026. `[x]` means verified, `[ ]` means open. Items marked 
 
 ## Demonstration examples (case PDF, page 2)
 
-- [x] Replaced the previous guard transcripts with five genuine Qwen3 14B responses in `examples.md`.
+- [x] Replaced the previous guard transcripts with five genuine gpt-oss 20B responses in `examples.md`.
 - [x] Include a nontrivial case combining an active product promotion and the PIX non-stacking rule, plus an online-return policy case.
 - [x] Included model name, prefetched policy sections, model tool calls, and observed limitations.
 - [ ] Repeat a representative subset with the paid hosted model before claiming its behavior.
@@ -40,7 +40,7 @@ Updated: 23 November 2026. `[x]` means verified, `[ ]` means open. Items marked 
 
 - [x] Public GitHub repository: https://github.com/grinch1/artefact-ai-engineer
 - [x] More than one genuine progress commit on `main`; no force push used.
-- [x] Ten unit tests pass, including policy prefetch before both model adapters. GitHub Actions passed Python compilation, tests, and Docker build for the Qwen3 model-change commit.
+- [x] Twelve unit tests pass, including policy prefetch before both model adapters and a regression for policy-section ranking. GitHub Actions passed Python compilation, tests, and Docker build for the earlier Qwen3 commit; the gpt-oss change still needs CI verification.
 - [x] Private case CSVs, internal policy PDF, ZIP, and API keys are excluded from version control.
 - [ ] Review the final repository contents and README as the candidate before submission.
 - [ ] Freeze the repository after the submission date and time; the case explicitly forbids later changes.
@@ -57,7 +57,7 @@ The PDF and email give different delivery channels. The planned interpretation i
 
 ## Next work, in order
 
-1. Review the Qwen3 14B examples and limits with the candidate.
+1. Review the gpt-oss 20B examples and limits with the candidate.
 2. Configure a hosted paid-model API key later and repeat the scenarios. Do not commit the key.
 3. Review from a fresh clone and, if available, run the container with the case data mounted read-only.
 4. Draft and inspect the English PDF, then submit through both channels and freeze the repository.

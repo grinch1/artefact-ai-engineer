@@ -33,6 +33,12 @@ class AgentTests(unittest.TestCase):
         self.assertIn("Fonte de teste", messages[1]["content"])
         self.assertEqual(agent.last_policy_sections, ["4.1 (p. 4)"])
 
+    def test_local_reasoning_is_model_specific(self):
+        with patch("openai.OpenAI"):
+            self.assertEqual(OllamaAgent(FakeStore(), "gpt-oss:20b", "http://localhost/v1").think,
+                             "medium")
+            self.assertFalse(OllamaAgent(FakeStore(), "qwen3:14b", "http://localhost/v1").think)
+
     def test_hosted_agent_consults_policy_then_returns_model_text(self):
         client = Mock()
         client.responses.create.return_value = SimpleNamespace(output=[], output_text="Resposta hospedada")

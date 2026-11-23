@@ -46,6 +46,11 @@ POLICY_CONTINUATIONS = {5: ("5.2", "Entregas para outras cidades"),
                         7: ("7.2", "Fluxo de atendimento"),
                         8: ("9", "Privacidade")}
 
+POLICY_STOPWORDS = {"para", "como", "qual", "quais", "quanto", "quantos", "sobre",
+                    "voces", "voce", "tem", "tenho", "posso", "meu", "minha",
+                    "mais", "esse", "essa", "este", "esta", "produto", "produtos",
+                    "valor", "loja", "empreendimento"}
+
 
 def normalize(value: str) -> str:
     value = unicodedata.normalize("NFKD", str(value)).casefold()
@@ -200,17 +205,20 @@ class Store:
     def get_policy(self, topic: str) -> dict:
         if not topic.strip():
             return {"error": "Specify a policy topic."}
-        words = [w for w in re.findall(r"\w+", normalize(topic))
-                 if len(w) > 2 and w not in {"qual", "quais", "para", "como", "dos", "das", "uma", "com"}]
+        words = {word[:5] if len(word) >= 5 else word
+                 for word in re.findall(r"\w+", normalize(topic))
+                 if (len(word) >= 5 or word in {"pix", "cep"}) and word not in POLICY_STOPWORDS}
         scored = []
         for item in self.policy_sections:
-            title = normalize(item["title"])
-            content = normalize(item["text"])
-            score = sum(5 * (word in title) + min(content.count(word), 3) for word in words)
-            if score:
-                scored.append((score, item))
-        scored.sort(key=lambda pair: (-pair[0], pair[1]["page"], pair[1]["section"]))
-        return {"matches": [dict(item, text=item["text"][:3000]) for _, item in scored[:4]],
+            title = re.findall(r"\w+", normalize(item["title"]))
+            content = re.findall(r"\w+", normalize(item["text"]))
+            hits = {word for word in words if any(token.startswith(word) for token in title + content)}
+            score = sum(5 * any(token.startswith(word) for token in title) +
+                        min(sum(token.startswith(word) for token in content), 3) for word in hits)
+            if hits:
+                scored.append((len(hits), score, item))
+        scored.sort(key=lambda entry: (-entry[1], -entry[0], entry[2]["page"], entry[2]["section"]))
+        return {"matches": [dict(item, text=item["text"][:3000]) for _, _, item in scored[:4]],
                 "source": "store policy PDF, version 2.1 (June 2025)"}
 
 
