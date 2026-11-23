@@ -40,7 +40,7 @@ Updated: 23 November 2026. `[x]` means verified, `[ ]` means open. Items marked 
 
 - [x] Public GitHub repository: https://github.com/grinch1/artefact-ai-engineer
 - [x] More than one genuine progress commit on `main`; no force push used.
-- [x] Twelve unit tests pass, including policy prefetch before both model adapters and a regression for policy-section ranking. GitHub Actions passed Python compilation, tests, and Docker build for the earlier Qwen3 commit; the gpt-oss change still needs CI verification.
+- [x] Twelve unit tests pass, including policy prefetch before both model adapters and a regression for policy-section ranking. GitHub Actions passed Python compilation, tests, and Docker build for the gpt-oss implementation commit `984f3c2`.
 - [x] Private case CSVs, internal policy PDF, ZIP, and API keys are excluded from version control.
 - [ ] Review the final repository contents and README as the candidate before submission.
 - [ ] Freeze the repository after the submission date and time; the case explicitly forbids later changes.
