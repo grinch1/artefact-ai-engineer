@@ -51,7 +51,8 @@ Updated: 24 November 2026. `[x]` means verified, `[ ]` means open. Items marked 
 
 ## Submission (case PDF, page 3; recruitment email)
 
-- [x] Prepared and visually reviewed a two-page English PDF in Downloads with the repository link, architecture, evidence, and limitations: `Vitor Hugo Moraes da Costa - Senior AI Engineer.pdf`.
+- [x] Prepared and visually reviewed one English PDF in Downloads for the form: a two-page case summary followed by the README, evaluation documentation, and five agent conversations (nine pages total), named `Vitor Hugo Moraes da Costa - Senior AI Engineer.pdf`. The agent conversation excerpts remain in Brazilian Portuguese by design.
+- [x] Inspected the signed-in form: it requires one PDF generated from the project's README/documentation (up to 100 MB) and a public GitHub repository link. The prefilled application email, job title, LinkedIn, and Greenhouse ID match the recruitment link and must not be edited.
 - [ ] Submit the PDF through the Google Form from the recruitment email while signed into a Gmail-enabled account.
 - [ ] Reply to the original Artefact email with the public repository link, as requested by the case PDF.
 - [ ] Verify receipt/submission before **24 November 2026, 23:59, São Paulo time** (second business day after the Saturday email).
