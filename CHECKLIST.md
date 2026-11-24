@@ -42,7 +42,7 @@ Updated: 24 November 2026. `[x]` means verified, `[ ]` means open. Items marked 
 
 - [x] Public GitHub repository: https://github.com/grinch1/artefact-ai-engineer
 - [x] More than one genuine progress commit on `main`; no force push used.
-- [x] Twenty-six unit tests pass locally, including policy provenance, fact-driven numerical guards, broad-policy follow-up routing, retrieval, installments, rounding, and strict tool routing. Previous commits passed GitHub Actions compilation, tests, and Docker build; the current commit needs its own CI check.
+- [x] Twenty-six unit tests pass locally, including policy provenance, fact-driven numerical guards, broad-policy follow-up routing, retrieval, installments, rounding, and strict tool routing. Commit `a058588` passed GitHub Actions compilation, tests, and Docker build.
 - [x] Private case CSVs, internal PDF, ZIP, and API keys are excluded from version control; the reviewed customer-facing `policies.json` is public.
 - [ ] Review the final repository contents and README as the candidate before submission.
 - [ ] Freeze the repository after the submission date and time; the case explicitly forbids later changes.
