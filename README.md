@@ -4,7 +4,7 @@ A Python prototype for the Artefact AI Engineer case. A language model answers c
 
 ## Run locally
 
-The case ZIP supplies six CSVs and an internal policy PDF. Keep them outside the repository. The public `policies.json` separates `company_policies` (reviewed customer-facing rules from that PDF), `agent_policies` (candidate-designed behavior), and `application_rules` (capabilities of this prototype). Company sections keep page references and typed facts while omitting conflicting contact details and internal procedures. At startup, the application checks the company source hash against the PDF when the PDF is present. Set `DATA_DIR` to the extracted `data` directory, which must contain the `products`, `categories`, `promotions`, `orders`, and `customers` CSVs. The `order_items` CSV is outside the current tool scope.
+The case ZIP supplies six CSVs and an internal policy PDF. Keep them out of Git. Locally, the supplied files can be placed in the ignored `data/` directory; the case brief and ZIP can be kept in ignored `case_materials/`, and the submission PDF in ignored `submission/`. The public `policies.json` separates `company_policies` (reviewed customer-facing rules from that PDF), `agent_policies` (candidate-designed behavior), and `application_rules` (capabilities of this prototype). Company sections keep page references and typed facts while omitting conflicting contact details and internal procedures. At startup, the application checks the company source hash against the PDF when the PDF is present. Set `DATA_DIR` to the extracted `data` directory, which must contain the `products`, `categories`, `promotions`, `orders`, and `customers` CSVs. The `order_items` CSV is outside the current tool scope.
 
 Install dependencies:
 
@@ -14,7 +14,7 @@ cd artefact-ai-engineer
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-export DATA_DIR=/absolute/path/to/case/data
+export DATA_DIR="$PWD/data"
 ```
 
 Install [Ollama](https://ollama.com/download) and download the [gpt-oss 20B model](https://ollama.com/library/gpt-oss). Ensure the Ollama service is running, then:

@@ -1,4 +1,7 @@
 data/
+case_materials/
+submission/
+.DS_Store
 *.pdf
 *.zip
 .git/
