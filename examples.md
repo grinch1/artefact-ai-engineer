@@ -1,6 +1,6 @@
-# Six real agent conversations
+# Five real agent conversations
 
-The first five conversations were recorded on 23 November 2026 with `gpt-oss:20b` on the private Mainframe, using the reviewed policy content now organized in `policies.json` and the supplied CSV snapshot loaded into SQLite. The sixth was recorded on 24 November after a live promotion-listing defect was corrected. Answers are selected raw model outputs, with trailing spaces removed for Markdown display. Before every answer, the application retrieved relevant policy sections. Model tool calls are shown separately. These observations do not guarantee performance on arbitrary questions.
+The first four conversations were recorded on 23 November 2026 with `gpt-oss:20b` on the private Mainframe, using the reviewed policy content now organized in `policies.json` and the supplied CSV snapshot loaded into SQLite. The fifth was recorded on 24 November after a live promotion-listing defect was corrected. Answers are selected raw model outputs, with trailing spaces removed for Markdown display. Before every answer, the application retrieved relevant policy sections. Model tool calls are shown separately. These observations do not guarantee performance on arbitrary questions.
 
 ## 1. In-stock acoustic guitars within budget
 
@@ -67,20 +67,7 @@ Como já há desconto promocional, o benefício adicional de 5 % no PIX não s
 **Policy evidence:** 6.2 (p. 6), 3 (p. 3), 6.1 (p. 6).
 **Model tool calls:** `search_products({"in_stock_only":true,"limit":10,"max_price":null,"query":"Ohana CK-20"})`
 
-## 4. Request outside the catalog
-
-**Customer:** Vocês vendem cordas para violão?
-
-**Assistant:**
-
-```text
-Não vendemos cordas avulsas para violão. A loja comercializa apenas instrumentos musicais, e acessórios independentes como cordas, palhetas ou cabos não fazem parte do nosso catálogo. Se precisar de cordas, recomendamos procurar uma loja especializada em acessórios musicais. Posso ajudar com mais alguma coisa?
-```
-
-**Policy evidence:** 1 (p. 2).
-**Model tool calls:** none; policy evidence was prefetched by the application.
-
-## 5. Installment rule and exact calculation
+## 4. Installment rule and exact calculation
 
 **Customer:** Posso parcelar em 10x sem juros um produto de R$ 800?
 
@@ -95,7 +82,7 @@ Para compras entre 7 e 12 parcelas o valor mínimo por parcela deve ser R$ 100
 **Model tool calls:** `check_installment({"installments":10,"price_brl":800})`
 **Verified backend rule:** `check_installment` calculated R$ 800 / 10 = R$ 80, below the R$ 100 minimum in section 3.1.
 
-## 6. All products with active discounts
+## 5. All products with active discounts
 
 **Customer:** Quais todos os produtos com desconto?
 

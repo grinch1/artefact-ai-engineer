@@ -35,7 +35,7 @@ Updated: 24 November 2026. `[x]` means verified, `[ ]` means open. Items marked 
 
 ## Demonstration examples (case PDF, page 2)
 
-- [x] Replaced the previous guard transcripts with six genuine gpt-oss 20B responses in `examples.md`, including the corrected full-promotion listing.
+- [x] Included five genuine gpt-oss 20B responses in `examples.md`, within the case's requested 3–5 examples, including the corrected full-promotion listing.
 - [x] Include a nontrivial case combining an active product promotion and the PIX non-stacking rule, plus an online-return policy case.
 - [x] Included model name, prefetched policy sections, model tool calls, and observed limitations.
 - [ ] Repeat a representative subset with the paid hosted model before claiming its behavior.
@@ -61,6 +61,6 @@ The PDF and email give different delivery channels. The planned interpretation i
 
 ## Next work, in order
 
-1. Candidate reviews the final README, six examples, public repository, and English PDF in Downloads.
+1. Candidate reviews the final README, five examples, public repository, and English PDF in Downloads.
 2. Submit the English PDF through the Google Form and reply to the original Artefact email with the public repository link by the deadline.
 3. Record the submission time and final commit, then freeze the repository. A hosted paid-model comparison is optional future work; do not commit an API key or change this repository after the deadline.
