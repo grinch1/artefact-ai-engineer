@@ -8,6 +8,7 @@ from decimal import Decimal
 from pathlib import Path
 
 from agent_tools import DEFINITIONS as TOOLS, run_tool
+from agent_tools.catalog import requested_promotion_listing
 from store import Store, customer_safe_policy_text, normalize
 
 
@@ -247,6 +248,29 @@ def policy_access_issue(answer: str, sections: list[str]) -> str | None:
     return None
 
 
+def promotion_listing_issue(message: str, answer: str, tool_results: list[dict]) -> str | None:
+    """Check a claimed complete promotion list against the filtered catalog result."""
+    if not requested_promotion_listing(message):
+        return None
+    if re.search(r"\b(?:hoje|agora)\b|\bao vivo\b", normalize(answer)):
+        return "Os preços e descontos vêm de um snapshot de demonstração. Não os descreva como dados ao vivo ou de hoje."
+    results = [item["result"] for item in tool_results
+               if item["name"] == "search_products" and
+               item["result"].get("applied_on_sale_only") is True]
+    if not results:
+        return "Consulte search_products com on_sale_only=true antes de listar promoções."
+    catalog = results[-1]
+    if catalog.get("has_more"):
+        return "A consulta está paginada. Não afirme que a lista de promoções está completa."
+    compact_answer = re.sub(r"[^a-z0-9]", "", normalize(answer))
+    missing = [item["name"] for item in catalog.get("results", [])
+               if re.sub(r"[^a-z0-9]", "", normalize(" ".join(item["name"].split()[:2])))
+               not in compact_answer]
+    if missing:
+        return "Inclua todos os produtos com desconto ativo retornados pela busca: " + ", ".join(missing)
+    return None
+
+
 def policy_evidence(store: Store, message: str, broad: bool = False,
                     followup: bool = False) -> tuple[str, list[str]]:
     """Retrieve structured policy evidence before either model is allowed to answer."""
@@ -307,7 +331,8 @@ class Agent:
             calls = [item for item in response.output if item.type == "function_call"]
             if not calls:
                 answer = response.output_text.strip() or "Não consegui responder agora. Procure a equipe da loja para confirmar."
-                issue = policy_access_issue(answer, sections) or answer_issue(
+                issue = policy_access_issue(answer, sections) or promotion_listing_issue(
+                    message, answer, self.last_tool_results) or answer_issue(
                     message, answer, self.last_tools, getattr(self.store, "policy_facts", None),
                     getattr(self.store, "application_rules", None))
                 if issue:
@@ -372,7 +397,8 @@ class OllamaAgent:
             calls = reply.tool_calls or []
             if not calls:
                 answer = (reply.content or "").strip() or "Não consegui responder agora. Procure a equipe da loja para confirmar."
-                issue = policy_access_issue(answer, self.last_policy_sections) or answer_issue(
+                issue = policy_access_issue(answer, self.last_policy_sections) or promotion_listing_issue(
+                    message, answer, self.last_tool_results) or answer_issue(
                     message, answer, self.last_tools, getattr(self.store, "policy_facts", None),
                     getattr(self.store, "application_rules", None))
                 if issue:

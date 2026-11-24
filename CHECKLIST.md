@@ -8,6 +8,7 @@ Updated: 24 November 2026. `[x]` means verified, `[ ]` means open. Items marked 
 - [x] Text message interface through the web chat and `POST /chat`; CLI also available.
 - [x] Store persona and tone specified in the agent instructions and shown in the UI.
 - [x] Product, price, stock, active promotion, and order lookup from the supplied CSV snapshot loaded into SQLite.
+- [x] A live "all discounted products" question exposed a partial catalog page being treated as a complete promotion list. `search_products` now filters active promotions before pagination, and a response check requires every returned product. The local model listed all 4/4 active discounts in a fresh retest.
 - [x] `policies.json` separates PDF-derived `company_policies`, candidate-designed `agent_policies`, and actual `application_rules`; startup checks the PDF hash when the original is present.
 - [x] A real-model accessory example redirects without claiming that accessories are sold.
 - [x] Compared Qwen 2.5 7B, Qwen3 14B and gpt-oss 20B on the Mainframe. gpt-oss 20B is the selected local model; the hosted model still needs an API-key test.
@@ -33,7 +34,7 @@ Updated: 24 November 2026. `[x]` means verified, `[ ]` means open. Items marked 
 
 ## Demonstration examples (case PDF, page 2)
 
-- [x] Replaced the previous guard transcripts with five genuine gpt-oss 20B responses in `examples.md`.
+- [x] Replaced the previous guard transcripts with six genuine gpt-oss 20B responses in `examples.md`, including the corrected full-promotion listing.
 - [x] Include a nontrivial case combining an active product promotion and the PIX non-stacking rule, plus an online-return policy case.
 - [x] Included model name, prefetched policy sections, model tool calls, and observed limitations.
 - [ ] Repeat a representative subset with the paid hosted model before claiming its behavior.
@@ -42,7 +43,7 @@ Updated: 24 November 2026. `[x]` means verified, `[ ]` means open. Items marked 
 
 - [x] Public GitHub repository: https://github.com/grinch1/artefact-ai-engineer
 - [x] More than one genuine progress commit on `main`; no force push used.
-- [x] Twenty-six unit tests pass locally, including policy provenance, fact-driven numerical guards, broad-policy follow-up routing, retrieval, installments, rounding, and strict tool routing. Commit `a058588` passed GitHub Actions compilation, tests, and Docker build.
+- [x] Twenty-nine unit tests pass locally, including policy provenance, fact-driven numerical guards, broad-policy follow-up routing, promotion listing, retrieval, installments, rounding, and strict tool routing. Previous commits passed GitHub Actions compilation, tests, and Docker build; the current commit needs its own CI check.
 - [x] Private case CSVs, internal PDF, ZIP, and API keys are excluded from version control; the reviewed customer-facing `policies.json` is public.
 - [ ] Review the final repository contents and README as the candidate before submission.
 - [ ] Freeze the repository after the submission date and time; the case explicitly forbids later changes.
@@ -59,6 +60,6 @@ The PDF and email give different delivery channels. The planned interpretation i
 
 ## Next work, in order
 
-1. Candidate reviews the final README, five examples, public repository, and English PDF in Downloads.
+1. Candidate reviews the final README, six examples, public repository, and English PDF in Downloads.
 2. Submit the English PDF through the Google Form and reply to the original Artefact email with the public repository link by the deadline.
 3. Record the submission time and final commit, then freeze the repository. A hosted paid-model comparison is optional future work; do not commit an API key or change this repository after the deadline.

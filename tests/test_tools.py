@@ -9,7 +9,9 @@ from agent_tools import DEFINITIONS, HANDLERS, run_tool
 
 class FakeStore:
     def search_products(self, **kwargs):
-        return {"catalog_query": kwargs["query"]}
+        return {"catalog_query": kwargs["query"], "sale_only": kwargs.get("on_sale_only", False),
+                "limit": kwargs["limit"], "max_price": kwargs.get("max_price"),
+                "in_stock_only": kwargs.get("in_stock_only")}
 
     def get_order(self, **kwargs):
         return {"order_id": kwargs["order_id"]}
@@ -48,6 +50,16 @@ class ToolTests(unittest.TestCase):
             "Quais violões vocês têm por até R$ 1.000?"))
         self.assertEqual(result["catalog_query"], "violão")
         self.assertEqual(result["applied_query"], "violão")
+
+    def test_all_discounted_products_forces_sale_filter_before_page(self):
+        result = json.loads(run_tool(FakeStore(), "search_products",
+            '{"query":"desconto","max_price":500,"limit":1,"in_stock_only":true,"on_sale_only":false}',
+            "Quais todos os produtos com desconto?"))
+        self.assertEqual(result["catalog_query"], "")
+        self.assertTrue(result["sale_only"])
+        self.assertEqual(result["limit"], 12)
+        self.assertIsNone(result["max_price"])
+        self.assertFalse(result["in_stock_only"])
 
 
 if __name__ == "__main__":

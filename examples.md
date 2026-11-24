@@ -1,6 +1,6 @@
-# Five real agent conversations
+# Six real agent conversations
 
-Recorded on 23 November 2026 with `gpt-oss:20b` on the private Mainframe, using the reviewed policy content now organized in `policies.json` and the supplied CSV snapshot loaded into SQLite. Answers are selected raw model outputs from real evaluation runs before the policy-file reorganization, with trailing spaces removed for Markdown display. Before every answer, the application retrieved relevant policy sections. Model tool calls are shown separately. These observations do not guarantee performance on arbitrary questions.
+The first five conversations were recorded on 23 November 2026 with `gpt-oss:20b` on the private Mainframe, using the reviewed policy content now organized in `policies.json` and the supplied CSV snapshot loaded into SQLite. The sixth was recorded on 24 November after a live promotion-listing defect was corrected. Answers are selected raw model outputs, with trailing spaces removed for Markdown display. Before every answer, the application retrieved relevant policy sections. Model tool calls are shown separately. These observations do not guarantee performance on arbitrary questions.
 
 ## 1. In-stock acoustic guitars within budget
 
@@ -95,4 +95,25 @@ Para compras entre 7 e 12 parcelas o valor mínimo por parcela deve ser R$ 100
 **Model tool calls:** `check_installment({"installments":10,"price_brl":800})`
 **Verified backend rule:** `check_installment` calculated R$ 800 / 10 = R$ 80, below the R$ 100 minimum in section 3.1.
 
-The evaluator covers twelve scenarios and records selected facts, policy sections, tool choices, and elapsed time. Manual review remains necessary. The source data is a static snapshot.
+## 6. All products with active discounts
+
+**Customer:** Quais todos os produtos com desconto?
+
+**Assistant:**
+
+```text
+Os produtos que estão com desconto no momento são:
+
+- Crafter HT‑100 Folk Aço Natural – Violões – R$ 1.967,18 (preço original R$ 2.399,00, 18% de desconto)
+- Kalani KAL‑700T Tenor Natural – Ukuleles – R$ 323,10 (preço original R$ 359,00, 10% de desconto)
+- Ohana CK‑20 Concert Natural – Ukuleles – R$ 439,20 (preço original R$ 549,00, 20% de desconto)
+- Taylor 110e Dreadnought Natural – Violões – R$ 5.519,08 (preço original R$ 5.999,00, 8% de desconto)
+
+Esses são todos os itens em promoção disponíveis no catálogo atual.
+```
+
+**Policy evidence:** 6.1 (p. 6), 6.2 (p. 6), 7.3 (p. 7).
+**Model tool calls:** `search_products`.
+**Verified catalog result:** 4 returned of 4 active promotions after filtering before pagination. The earlier live answer listed only one product from a general catalog page.
+
+The evaluator covers 26 scenarios and records selected facts, policy sections, tool choices, and elapsed time. Manual review remains necessary. The source data is a static snapshot.

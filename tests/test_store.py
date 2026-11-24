@@ -47,6 +47,12 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(result["results"][0]["pix_price_brl"], "R$ 800,00")
         self.assertFalse(result["results"][0]["pix_discount_stacks"])
 
+    def test_sale_filter_runs_before_pagination(self):
+        result = self.store.search_products("", limit=1, on_sale_only=True)
+        self.assertEqual(result["total_matches"], 1)
+        self.assertEqual(result["returned_count"], 1)
+        self.assertEqual(result["results"][0]["name"], "Violão Teste")
+
     def test_pix_uses_decimal_cent_rounding(self):
         result = self.store.search_products("Violão Pix")["results"][0]
         self.assertEqual(result["pix_price_brl"], "R$ 550,91")

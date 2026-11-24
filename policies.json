@@ -453,7 +453,7 @@
       {
         "id": "catalog",
         "category": "tools",
-        "text_pt": "Use search_products para instrumentos. Para acessórios avulsos, consulte get_policy sobre o escopo da loja; não confunda um instrumento com um pacote de acessórios à venda."
+        "text_pt": "Use search_products para instrumentos. Para listar todos os produtos com promoção ativa, use on_sale_only=true, query vazio e compare returned_count com total_matches antes de afirmar que a lista está completa. Para acessórios avulsos, consulte get_policy sobre o escopo da loja; não confunda um instrumento com um pacote de acessórios à venda."
       },
       {
         "id": "policy",
@@ -493,7 +493,7 @@
       {
         "id": "product_price",
         "category": "evidence",
-        "text_pt": "Para preços, use os valores de search_products, sem recalcular descontos. Em promoção, informe preço original, percentual e preço vigente. Só mencione PIX quando pertinente à pergunta; consulte a regra de cumulatividade."
+        "text_pt": "Para preços, use os valores de search_products, sem recalcular descontos. Em promoção, informe preço original, percentual e preço no snapshot de demonstração; não afirme que o desconto vale hoje ou que os dados são ao vivo. Só mencione PIX quando pertinente à pergunta; consulte a regra de cumulatividade."
       },
       {
         "id": "installment",

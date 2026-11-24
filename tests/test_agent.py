@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from agent import (Agent, OllamaAgent, answer_issue, default_application_rules,
                    default_policy_facts, is_broad_policy_request, is_policy_followup,
-                   policy_access_issue, policy_evidence)
+                   policy_access_issue, policy_evidence, promotion_listing_issue)
 
 
 class FakeStore:
@@ -135,6 +135,16 @@ class AgentTests(unittest.TestCase):
         agent.ask("quais sao as politicas da loja")
         agent.ask("sim quero essas informacoes")
         self.assertEqual(agent.last_policy_sections, ["2 (p. 2)", "4.1 (p. 4)"])
+
+    def test_promotion_listing_requires_all_returned_products(self):
+        tools = [{"name": "search_products", "result": {"applied_on_sale_only": True,
+                  "has_more": False, "results": [{"name": "Crafter HT-100 Folk"},
+                                                  {"name": "Ohana CK-20 Concert"}]}}]
+        question = "Quais todos os produtos com desconto?"
+        self.assertIsNotNone(promotion_listing_issue(question, "Apenas Crafter HT-100.", tools))
+        self.assertIsNone(promotion_listing_issue(question, "Crafter HT-100 e Ohana CK-20.", tools))
+        self.assertIsNotNone(promotion_listing_issue(
+            question, "Crafter HT-100 e Ohana CK-20 estão em promoção hoje.", tools))
 
     def test_numeric_guard_uses_versioned_company_facts(self):
         facts = default_policy_facts()

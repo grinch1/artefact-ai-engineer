@@ -116,7 +116,7 @@ class Store:
                   r["estimated_delivery"], r["tracking_code"]) for r in self.tables["orders"]))
 
     def search_products(self, query: str = "", max_price: float | None = None, limit: int = 8,
-                        in_stock_only: bool = False) -> dict:
+                        in_stock_only: bool = False, on_sale_only: bool = False) -> dict:
         if max_price is not None and (max_price < 0 or max_price > 1_000_000):
             return {"error": "Invalid price limit"}
         words = [w for w in re.findall(r"\w+", normalize(query)) if len(w) > 1 and w not in ("de", "da", "do")]
@@ -133,7 +133,8 @@ class Store:
             LEFT JOIN promotions m ON m.product_id = p.id
             WHERE p.status = 'active' AND (? = 0 OR p.stock_quantity > 0)
             GROUP BY p.id
-        """, (int(in_stock_only),)).fetchall()
+            HAVING (? = 0 OR COALESCE(MAX(m.discount_percent), 0) > 0)
+        """, (int(in_stock_only), int(on_sale_only))).fetchall()
         for row in rows:
             if row["status"].lower() != "active":
                 continue
