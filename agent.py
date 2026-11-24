@@ -8,7 +8,7 @@ from decimal import Decimal
 from pathlib import Path
 
 from agent_tools import DEFINITIONS as TOOLS, run_tool
-from store import Store, normalize
+from store import Store, customer_safe_policy_text, normalize
 
 
 def agent_instructions(store: Store) -> str:
@@ -52,6 +52,15 @@ def answer_issue(message: str, answer: str, tool_names=(), policy_facts: dict | 
     unavailable = lambda name: not capabilities.get(name, False)
     normalized_message = re.sub(r"\s+", " ", re.sub(r"[^a-z0-9]+", " ", normalize(message)))
     normalized_answer = re.sub(r"\s+", " ", re.sub(r"[^a-z0-9]+", " ", normalize(answer)))
+    if re.search(r"troca\s+por\s+defeit\w*.{0,85}\bgarantia\s+(?:do\s+)?fabricante\b",
+                 normalized_answer):
+        return "A janela de troca por defeito da loja é distinta da garantia contratual do fabricante."
+    if re.search(r"\b(?:pecas|acessorios)\s+de\s+sopro\b.{0,35}\bnao\s+(?:sao\s+)?troc",
+                 normalized_answer):
+        return "A exclusão de troca vale para boquilhas de sopro, não para todas as peças de sopro."
+    if re.search(r"\b(?:valor|minimo)\s+minimo\s+por\s+parcela\s+r\s*0\b",
+                 normalized_answer):
+        return "Para uma a três parcelas, diga 'sem mínimo por parcela'; não apresente R$ 0 como valor mínimo."
     installment_question = bool(re.search(r"\b(?:parcel\w*|pagar|pagamento|\d+\s*x)\b", normalized_message))
     if "search_products" in tool_names and "pix" not in normalized_message and "pix" in normalized_answer:
         return "A pergunta é sobre o catálogo, não sobre forma de pagamento. Omita os valores PIX não solicitados."
@@ -214,9 +223,39 @@ def answer_issue(message: str, answer: str, tool_names=(), policy_facts: dict | 
     return None
 
 
-def policy_evidence(store: Store, message: str) -> tuple[str, list[str]]:
+def is_broad_policy_request(message: str) -> bool:
+    """Recognize requests for the store's rules as a whole, not one rule."""
+    normalized = normalize(message)
+    return bool(re.search(r"\b(?:politicas|regras)\b", normalized)
+                and re.search(r"\b(?:loja|emporio|todas|gerais)\b", normalized)
+                and not re.search(r"\b(?:pedido|produto|frete|garantia|troca|devolucao|parcelamento)\b",
+                                  normalized))
+
+
+def is_policy_followup(message: str) -> bool:
+    normalized = normalize(message).strip()
+    return bool(re.fullmatch(r"(?:sim[, ]*)?(?:quero|gostaria|pode|me passe|me diga)?"
+                             r"[ ,]*(?:essas?|todas?)?\s*(?:informacoes|detalhes|regras|politicas)"
+                             r"[.!? ]*", normalized))
+
+
+def policy_access_issue(answer: str, sections: list[str]) -> str | None:
+    """A sourced answer cannot claim that the supplied policies are unavailable."""
+    if sections and re.search(r"nao\s+(?:tenho|temos)\s+acesso\b.{0,70}"
+                              r"\b(?:manual|politic\w*|regras?)\b", normalize(answer)):
+        return "As políticas foram consultadas e estão no contexto. Resuma as regras relevantes, sem alegar falta de acesso."
+    return None
+
+
+def policy_evidence(store: Store, message: str, broad: bool = False,
+                    followup: bool = False) -> tuple[str, list[str]]:
     """Retrieve structured policy evidence before either model is allowed to answer."""
-    matches = store.get_policy(message).get("matches", [])[:3]
+    if (broad or is_broad_policy_request(message)) and hasattr(store, "policy_sections"):
+        matches = [dict(item, text=customer_safe_policy_text(item["text"]),
+                        facts=getattr(store, "policy_facts", {}).get(item["section"], {}))
+                   for item in store.policy_sections]
+    else:
+        matches = store.get_policy(message).get("matches", [])[:3]
     sections = [f"{item['section']} (p. {item['page']})" for item in matches]
     excerpts = [{"section": item["section"], "page": item["page"],
                  "text": item["text"][:2200], "facts": item.get("facts", {})} for item in matches]
@@ -226,9 +265,16 @@ def policy_evidence(store: Store, message: str) -> tuple[str, list[str]]:
     if len(price) == len(count) == 1 and hasattr(store, "check_installment"):
         numeric_price = float(price[0].replace(".", "").replace(",", "."))
         calculation = store.check_installment(numeric_price, int(count[0]))
+    followup_instruction = ("O cliente aceitou receber as informações oferecidas no turno anterior. "
+                            "Forneça agora os detalhes disponíveis; não peça para ele escolher um assunto. "
+                            if followup else "")
     context = ("Regras estruturadas derivadas do manual e consultadas antes desta resposta. Use somente as regras "
                "pertinentes; elas não substituem a consulta ao catálogo ou ao pedido. "
-               "Se não houver trecho pertinente, não invente a política.\n" +
+               "Se não houver trecho pertinente, não invente a política. "
+               "Se o cliente pedir as políticas da loja em geral, resuma as principais regras por assunto "
+               "em português simples. Você tem acesso às regras abaixo; não diga que o manual está indisponível. "
+               "Não acrescente condições, exceções, prazos ou promessas sem apoio nas seções consultadas. " +
+               followup_instruction + "\n" +
                json.dumps({"sections": excerpts, "verified_installment": calculation}, ensure_ascii=False))
     return context, sections
 
@@ -243,11 +289,15 @@ class Agent:
         self.history = []
         self.last_tools = []
         self.last_tool_results = []
+        self.last_policy_request_was_broad = False
 
     def ask(self, message: str) -> str:
         self.last_tools = []
         self.last_tool_results = []
-        context, _ = policy_evidence(self.store, message)
+        followup = is_policy_followup(message) and self.last_policy_request_was_broad
+        broad = is_broad_policy_request(message) or followup
+        context, sections = policy_evidence(self.store, message, broad=broad, followup=followup)
+        self.last_policy_request_was_broad = broad
         feedback = ""
         # Keep history in process only; no customer messages written to disk.
         self.history.append({"role": "user", "content": message})
@@ -257,8 +307,9 @@ class Agent:
             calls = [item for item in response.output if item.type == "function_call"]
             if not calls:
                 answer = response.output_text.strip() or "Não consegui responder agora. Procure a equipe da loja para confirmar."
-                issue = answer_issue(message, answer, self.last_tools, getattr(self.store, "policy_facts", None),
-                                     getattr(self.store, "application_rules", None))
+                issue = policy_access_issue(answer, sections) or answer_issue(
+                    message, answer, self.last_tools, getattr(self.store, "policy_facts", None),
+                    getattr(self.store, "application_rules", None))
                 if issue:
                     feedback = "\nA resposta anterior foi rejeitada: " + issue
                     continue
@@ -291,6 +342,7 @@ class OllamaAgent:
         self.last_tool_results = []
         self.last_policy_sections = []
         self.last_rejections = []
+        self.last_policy_request_was_broad = False
         self.tools = [
             {"type": "function", "function": {key: value for key, value in tool.items() if key != "type"}}
             for tool in TOOLS
@@ -301,7 +353,11 @@ class OllamaAgent:
         self.last_tool_calls = []
         self.last_tool_results = []
         self.last_rejections = []
-        context, self.last_policy_sections = policy_evidence(self.store, message)
+        followup = is_policy_followup(message) and self.last_policy_request_was_broad
+        broad = is_broad_policy_request(message) or followup
+        context, self.last_policy_sections = policy_evidence(self.store, message, broad=broad,
+                                                             followup=followup)
+        self.last_policy_request_was_broad = broad
         self.history.append({"role": "user", "content": message})
         repair_messages = []
         for _ in range(5):
@@ -309,15 +365,16 @@ class OllamaAgent:
                         *self.history[1:], *repair_messages]
             response = self.client.chat.completions.create(
                 model=self.model, messages=messages, tools=self.tools,
-                tool_choice="auto", temperature=0.1, max_tokens=800,
+                tool_choice="auto", temperature=0.1, max_tokens=1800 if broad else 800,
                 extra_body={"think": self.think},
             )
             reply = response.choices[0].message
             calls = reply.tool_calls or []
             if not calls:
                 answer = (reply.content or "").strip() or "Não consegui responder agora. Procure a equipe da loja para confirmar."
-                issue = answer_issue(message, answer, self.last_tools, getattr(self.store, "policy_facts", None),
-                                     getattr(self.store, "application_rules", None))
+                issue = policy_access_issue(answer, self.last_policy_sections) or answer_issue(
+                    message, answer, self.last_tools, getattr(self.store, "policy_facts", None),
+                    getattr(self.store, "application_rules", None))
                 if issue:
                     self.last_rejections.append({"issue": issue, "answer": answer})
                     repair_messages = [{"role": "assistant", "content": answer},

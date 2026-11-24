@@ -5,7 +5,9 @@ from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from agent import Agent, OllamaAgent, answer_issue, default_application_rules, default_policy_facts
+from agent import (Agent, OllamaAgent, answer_issue, default_application_rules,
+                   default_policy_facts, is_broad_policy_request, is_policy_followup,
+                   policy_access_issue, policy_evidence)
 
 
 class FakeStore:
@@ -62,6 +64,12 @@ class AgentTests(unittest.TestCase):
                                           "Para detalhes, basta me informar o nome ou modelo."))
         self.assertIsNotNone(answer_issue("Qual é a garantia?",
                                           "O prazo do fabricante está no certificado."))
+        self.assertIsNotNone(answer_issue("Quais são as políticas da loja?",
+                                          "Troca por defeito em 30 dias para garantia do fabricante."))
+        self.assertIsNotNone(answer_issue("Quais são as políticas da loja?",
+                                          "Peças de sopro não são trocáveis."))
+        self.assertIsNotNone(answer_issue("Quais são as políticas da loja?",
+                                          "Valor mínimo por parcela R$ 0 para até três vezes."))
         self.assertIsNone(answer_issue("Qual o frete?", "O valor depende do CEP, peso e dimensões."))
         self.assertIsNotNone(answer_issue("Comprei presencialmente e me arrependi.",
                                           "A devolução online tem prazo de 7 dias úteis."))
@@ -104,6 +112,29 @@ class AgentTests(unittest.TestCase):
         messages = client.chat.completions.create.call_args.kwargs["messages"]
         self.assertIn("Fonte de teste", messages[1]["content"])
         self.assertEqual(agent.last_policy_sections, ["4.1 (p. 4)"])
+
+    def test_broad_policy_request_and_followup_retain_all_sections(self):
+        class PolicyStore(FakeStore):
+            policy_sections = [
+                {"section": "2", "page": 2, "title": "Hours", "text": "Monday to Saturday."},
+                {"section": "4.1", "page": 4, "title": "Returns", "text": "Seven calendar days."},
+            ]
+            policy_facts = {}
+
+        self.assertTrue(is_broad_policy_request("quais sao as politicas da loja"))
+        self.assertTrue(is_policy_followup("sim quero essas informacoes"))
+        self.assertEqual(len(policy_evidence(PolicyStore(), "quais sao as politicas da loja")[1]), 2)
+        self.assertIsNotNone(policy_access_issue(
+            "Não tenho acesso direto ao manual interno.", ["2 (p. 2)"]))
+        client = Mock()
+        client.chat.completions.create.return_value = SimpleNamespace(
+            choices=[SimpleNamespace(message=SimpleNamespace(content="Horários e devoluções.", tool_calls=[]))]
+        )
+        with patch("openai.OpenAI", return_value=client):
+            agent = OllamaAgent(PolicyStore(), "test-model", "http://localhost:11435/v1")
+        agent.ask("quais sao as politicas da loja")
+        agent.ask("sim quero essas informacoes")
+        self.assertEqual(agent.last_policy_sections, ["2 (p. 2)", "4.1 (p. 4)"])
 
     def test_numeric_guard_uses_versioned_company_facts(self):
         facts = default_policy_facts()

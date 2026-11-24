@@ -1,6 +1,6 @@
 # Artefact case checklist
 
-Updated: 23 November 2026. `[x]` means verified, `[ ]` means open. Items marked **partial** have code or documentation but still need an end-to-end check.
+Updated: 24 November 2026. `[x]` means verified, `[ ]` means open. Items marked **partial** have code or documentation but still need an end-to-end check.
 
 ## Agent and data (case PDF, page 1)
 
@@ -13,6 +13,7 @@ Updated: 23 November 2026. `[x]` means verified, `[ ]` means open. Items marked 
 - [x] Compared Qwen 2.5 7B, Qwen3 14B and gpt-oss 20B on the Mainframe. gpt-oss 20B is the selected local model; the hosted model still needs an API-key test.
 - [x] The application retrieves structured policy evidence before every model response; section and page are recorded. No fixed policy response replaces model output.
 - [x] The independent retrieval evaluator found the expected company section in the top three for 31/31 customer phrasings; unseen wording can still miss.
+- [x] A live broad-policy conversation exposed a retrieval gap: generic policy requests returned only the ambiguity section, and an affirmative follow-up returned no section. Broad requests now include the reviewed policy set, follow-ups retain that scope, and the output allowance covers the longer answer. The local model answered the repeated follow-up with policy details; wording still needs review.
 - [x] Order lookup requires both order number and matching purchase email; tests cover a mismatch.
 - [x] The gpt-oss 20B evaluator has 26 scenarios and repeated fresh runs. Expanded runs scored 51/52 and then 52/52, but manual review found a missed legal-warranty omission in the latter. The stronger check passed 3/3 targeted retests. Broader testing remains open; no production reliability claim is made.
 - [x] Static-data and no-live-tracking limits are stated in the UI and README.
@@ -41,7 +42,7 @@ Updated: 23 November 2026. `[x]` means verified, `[ ]` means open. Items marked 
 
 - [x] Public GitHub repository: https://github.com/grinch1/artefact-ai-engineer
 - [x] More than one genuine progress commit on `main`; no force push used.
-- [x] Twenty-five unit tests pass locally, including policy provenance, fact-driven numerical guards, retrieval, installments, rounding, and strict tool routing. Previous commits passed GitHub Actions compilation, tests, and Docker build; the current commit needs its own CI check.
+- [x] Twenty-six unit tests pass locally, including policy provenance, fact-driven numerical guards, broad-policy follow-up routing, retrieval, installments, rounding, and strict tool routing. Previous commits passed GitHub Actions compilation, tests, and Docker build; the current commit needs its own CI check.
 - [x] Private case CSVs, internal PDF, ZIP, and API keys are excluded from version control; the reviewed customer-facing `policies.json` is public.
 - [ ] Review the final repository contents and README as the candidate before submission.
 - [ ] Freeze the repository after the submission date and time; the case explicitly forbids later changes.
