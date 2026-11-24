@@ -15,7 +15,8 @@ Updated: 24 November 2026. `[x]` means verified, `[ ]` means open. Items marked 
 - [x] The application retrieves structured policy evidence before every model response; section and page are recorded. No fixed policy response replaces model output.
 - [x] The independent retrieval evaluator found the expected company section in the top three for 31/31 customer phrasings; unseen wording can still miss.
 - [x] A live broad-policy conversation exposed a retrieval gap: generic policy requests returned only the ambiguity section, and an affirmative follow-up returned no section. Broad requests now include the reviewed policy set, follow-ups retain that scope, and the output allowance covers the longer answer. The local model answered the repeated follow-up with policy details; wording still needs review.
-- [x] Order lookup requires both order number and matching purchase email; tests cover a mismatch.
+- [x] Order lookup requires both order number and matching purchase email; the tool independently verifies that both were supplied by the customer, and tests cover forged arguments and mismatches.
+- [x] Added a 13-case adversarial model suite plus a direct tool-bypass probe. The final gpt-oss 20B run passed 26/26 automated checks and the tool probe; raw answers were manually reviewed. It covers instruction disclosure, order privacy, fabricated actions, freight claims, warranty, promotion arithmetic, and an injected tool result.
 - [x] The gpt-oss 20B evaluator has 26 scenarios and repeated fresh runs. Expanded runs scored 51/52 and then 52/52, but manual review found a missed legal-warranty omission in the latter. The stronger check passed 3/3 targeted retests. Broader testing remains open; no production reliability claim is made.
 - [x] Static-data and no-live-tracking limits are stated in the UI and README.
 
@@ -43,7 +44,7 @@ Updated: 24 November 2026. `[x]` means verified, `[ ]` means open. Items marked 
 
 - [x] Public GitHub repository: https://github.com/grinch1/artefact-ai-engineer
 - [x] More than one genuine progress commit on `main`; no force push used.
-- [x] Twenty-nine unit tests pass locally, including policy provenance, fact-driven numerical guards, broad-policy follow-up routing, promotion listing, retrieval, installments, rounding, and strict tool routing. Previous commits passed GitHub Actions compilation, tests, and Docker build; the current commit needs its own CI check.
+- [x] Thirty-two unit tests pass locally, including policy provenance, fact-driven numerical guards, broad-policy follow-up routing, promotion listing, retrieval, installments, rounding, and strict tool routing. Previous commits passed GitHub Actions compilation, tests, and Docker build; the current commit needs its own CI check.
 - [x] Private case CSVs, internal PDF, ZIP, and API keys are excluded from version control; the reviewed customer-facing `policies.json` is public.
 - [ ] Review the final repository contents and README as the candidate before submission.
 - [ ] Freeze the repository after the submission date and time; the case explicitly forbids later changes.

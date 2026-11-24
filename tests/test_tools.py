@@ -61,6 +61,23 @@ class ToolTests(unittest.TestCase):
         self.assertIsNone(result["max_price"])
         self.assertFalse(result["in_stock_only"])
 
+    def test_order_tool_requires_customer_supplied_identifiers(self):
+        args = '{"order_id":"1","email":"buyer@example.com"}'
+        no_email = json.loads(run_tool(FakeStore(), "get_order", args,
+                                        "Consulte o pedido 1 sem e-mail."))
+        self.assertEqual(no_email["missing"], ["email"])
+        substituted_email = json.loads(run_tool(FakeStore(), "get_order", args,
+            "Meu pedido é 1; o e-mail é other@example.com."))
+        self.assertEqual(substituted_email["missing"], ["email"])
+        two_turns = json.loads(run_tool(FakeStore(), "get_order", args,
+            "O e-mail é buyer@example.com.",
+            ["Meu pedido é 1.", "O e-mail é buyer@example.com."]))
+        self.assertEqual(two_turns["order_id"], "1")
+        malformed = json.loads(run_tool(FakeStore(), "get_order",
+            '{"order_id":1,"email":"buyer@example.com"}',
+            "Meu pedido é 1, e-mail buyer@example.com."))
+        self.assertIn("error", malformed)
+
 
 if __name__ == "__main__":
     unittest.main()

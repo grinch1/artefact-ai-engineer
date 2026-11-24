@@ -45,7 +45,9 @@ def number_pattern(number: int) -> str:
 
 
 def answer_issue(message: str, answer: str, tool_names=(), policy_facts: dict | None = None,
-                 application_rules: list[dict] | None = None) -> str | None:
+                 application_rules: list[dict] | None = None,
+                 customer_messages: list[str] | None = None,
+                 tool_results: list[dict] | None = None) -> str | None:
     """Reject known unsupported claims while keeping the wording model-generated."""
     facts = policy_facts if policy_facts is not None else default_policy_facts()
     capabilities = {item["id"]: item["available"] for item in
@@ -53,6 +55,13 @@ def answer_issue(message: str, answer: str, tool_names=(), policy_facts: dict | 
     unavailable = lambda name: not capabilities.get(name, False)
     normalized_message = re.sub(r"\s+", " ", re.sub(r"[^a-z0-9]+", " ", normalize(message)))
     normalized_answer = re.sub(r"\s+", " ", re.sub(r"[^a-z0-9]+", " ", normalize(answer)))
+    customer_messages = customer_messages or [message]
+    verified_orders = [item["result"] for item in (tool_results or [])
+                       if item["name"] == "get_order" and "status" in item["result"]]
+    if verified_orders and (re.search(r"\bdata de entrega\b(?!\s+(?:estimada|prevista))",
+                                      normalized_answer)
+                            or re.search(r"\bentregue em\s+\d", normalized_answer)):
+        return "O CSV só informa uma previsão de entrega. Não apresente essa data como a data efetiva do recebimento."
     if re.search(r"troca\s+por\s+defeit\w*.{0,85}\bgarantia\s+(?:do\s+)?fabricante\b",
                  normalized_answer):
         return "A janela de troca por defeito da loja é distinta da garantia contratual do fabricante."
@@ -89,6 +98,8 @@ def answer_issue(message: str, answer: str, tool_names=(), policy_facts: dict | 
             and isinstance(exchange_days, int) and isinstance(legal_days, int)
             and reported_days and exchange_days < int(reported_days[1]) <= legal_days
             and re.search(r"\b(?:defeit|troc|garant)\w*\b", normalized_message)):
+        if not re.search(rf"\b{number_pattern(exchange_days)}\s+dias\b", normalized_answer):
+            return f"Explique também a janela de {exchange_days} dias corridos para troca por defeito na loja."
         if "confirm" not in normalized_answer:
             return ("Para defeito entre a janela de troca da loja e a garantia legal, "
                     "a relação entre as regras precisa ser confirmada pela equipe humana. "
@@ -98,9 +109,8 @@ def answer_issue(message: str, answer: str, tool_names=(), policy_facts: dict | 
                 normalized_answer)):
             return (f"Mantenha a regra completa: a garantia legal é de {legal_days} dias "
                     "a partir do recebimento; a relação com a troca da loja exige confirmação humana.")
-        if re.search(r"\b(?:deve|sera|precisa)\b.{0,30}\b(?:encaminhad\w*|direcionad\w*)\b"
-                     r".{0,40}\b(?:fabricante|suporte)\b", normalized_answer):
-            return "Não direcione definitivamente ao fabricante. A equipe humana precisa confirmar o procedimento."
+        if "fabricante" in normalized_answer:
+            return "Para defeitos entre 31 e 90 dias, explique os dois prazos e peça confirmação humana sem sugerir o fabricante como próximo passo."
     bands = facts.get("3.1", {}).get("installment_bands", [])
     highest_band = max(bands, key=lambda item: item["from"], default=None)
     if (highest_band and highest_band["from"] > 1
@@ -120,6 +130,9 @@ def answer_issue(message: str, answer: str, tool_names=(), policy_facts: dict | 
     if re.search(r"\bgaranti\w*\b|\bdefeit\w*\b", normalized_message) and re.search(
             r"\bgarantia legal do fabricante\b", normalized_answer):
         return "A garantia legal e a garantia contratual do fabricante são regras distintas. Corrija a atribuição."
+    if re.search(r"\b(?:fabricante|suporte do fabricante)\b.{0,35}\b(?:sob|pela|atraves da)\s+garantia legal\b",
+                 normalized_answer):
+        return "A garantia legal não deve ser atribuída ao fabricante. Separe as regras e peça confirmação humana para o procedimento entre 31 e 90 dias."
     prices = re.findall(r"R\$\s*([\d.]+(?:,\d{2})?)", message, re.IGNORECASE)
     counts = re.findall(r"\b(\d{1,2})\s*(?:x\b|vezes\b)", message, re.IGNORECASE)
     if len(prices) == len(counts) == 1:
@@ -137,9 +150,11 @@ def answer_issue(message: str, answer: str, tool_names=(), policy_facts: dict | 
         return "A interface não renderiza tabelas Markdown. Reescreva como lista simples."
     if "**" in answer:
         return "A interface mostra Markdown como texto. Remova marcações de negrito e use texto simples."
-    if re.search(r"\bpedido\D{0,6}\d+\b", message, re.IGNORECASE) and re.search(
+    if (not re.search(r"devol|arrepend|troca", normalize(message))
+            and re.search(r"\bpedido\D{0,6}\d+\b", message, re.IGNORECASE)
+            and re.search(
             r"\b(?:informe|informar|preciso|qual)\b.{0,55}\bn[uú]mero\b|\bn[uú]mero completo\b",
-            answer, re.IGNORECASE | re.DOTALL):
+            answer, re.IGNORECASE | re.DOTALL)):
         return "O número do pedido já foi informado. Peça apenas o e-mail da compra."
     if (re.search(r"devol|arrepend|troca", normalize(message))
             and not re.search(r"\bpedido\D{0,6}\d+\b", message, re.IGNORECASE)
@@ -147,23 +162,62 @@ def answer_issue(message: str, answer: str, tool_names=(), policy_facts: dict | 
                           r"\b(?:n[uú]mero\s+do\s+pedido|e[‑-]?mail|dados)\b",
                           answer, re.IGNORECASE | re.DOTALL)):
         return "A pergunta é sobre a regra geral de devolução ou troca. Não peça identificadores pessoais; explique a regra e oriente a equipe humana."
-    if (not facts.get("1.2", {}).get("contact_details_confirmed", False)
-            and re.search(r"[\w.+-]+@[\w.-]+\.[\w-]+|\(?\d{2}\)?\s*\d{4,5}\s*[-–]\s*\d{4}", answer)):
-        return "Há contato telefônico ou e-mail não confirmado no manual. Reescreva sem esses dados."
+    if not facts.get("1.2", {}).get("contact_details_confirmed", False):
+        answer_emails = {value.casefold() for value in
+                         re.findall(r"[\w.+-]+@[\w.-]+\.[\w-]+", answer)}
+        customer_emails = {value.casefold() for text in customer_messages for value in
+                           re.findall(r"[\w.+-]+@[\w.-]+\.[\w-]+", text)}
+        order_context = any(re.search(r"\bpedido\b", normalize(text)) for text in customer_messages)
+        if (re.search(r"\(?\d{2}\)?\s*\d{4,5}\s*[-–]\s*\d{4}", answer)
+                or answer_emails - customer_emails or (answer_emails and not order_context)):
+            return "Há contato telefônico ou e-mail não confirmado no manual. Reescreva sem esses dados."
     if unavailable("external_shipping_quote") and re.search(r"frete|entrega|envio", message, re.IGNORECASE) and re.search(
             r"\b(?:posso|podemos)\b.{0,45}\b(?:estimar|cotar|calcular)\b", answer,
             re.IGNORECASE | re.DOTALL):
         return "Não existe ferramenta de cotação de frete. Reescreva sem oferecer estimativa ou cálculo."
+    if unavailable("external_shipping_quote") and re.search(
+            r"\b(?:fizemos|fiz|ja|consultei|consultamos|verifiquei|verificamos)\b"
+            r".{0,30}\b(?:consulta|cotacao|consult\w*|verific\w*)\b.{0,55}"
+            r"\b(?:transportadora\w*|correios|jadlog)\b|"
+            r"\b(?:consultei|consultamos|verifiquei|verificamos)\b.{0,55}"
+            r"\b(?:transportadora\w*|correios|jadlog)\b", normalize(answer)):
+        return "Nenhuma transportadora foi consultada. Descreva apenas as regras do frete e a limitação desta aplicação."
+    if unavailable("external_shipping_quote") and re.search(r"\b(?:frete|envio|entrega)\b",
+                                                             normalized_message) and re.search(
+            r"\bnao\s+consigo\s+(?:calcular|estimar|cotar)\b.{0,70}"
+            r"\b(?:pois|porque|falta)\b.{0,70}\b(?:peso|dimens\w*|informac\w*)\b",
+            normalized_answer):
+        return "A limitação é a falta de integração de cotação, não apenas a ausência de peso ou dimensões."
+    if (unavailable("external_shipping_quote")
+            and re.search(r"\b(?:cotac\w*|valor exato|preco exato|quanto (?:sai|custa))\b",
+                          normalized_message)
+            and not re.search(r"\b(?:integrac\w*|ferramenta|acesso\s+(?:a|as|ao)\s+"
+                              r"(?:sistema|transportadora))\b", normalized_answer)):
+        return "Para uma cotação exata, esclareça que este chat não tem integração de cotação ou acesso ao sistema da transportadora."
     if unavailable("external_shipping_quote") and re.search(r"frete|entrega|envio", message, re.IGNORECASE) and re.search(
             r"\b(?:basta\s+(?:me\s+)?informar|me\s+informe|pode\s+(?:me\s+)?informar)\b"
             r".{0,100}\b(?:cep|dimens[oõ]es|peso)\b", answer,
             re.IGNORECASE | re.DOTALL):
         return "Não peça CEP, dimensões ou peso para uma cotação que esta aplicação não realiza."
-    if unavailable("open_return") and re.search(r"devol|arrepend|troca", message, re.IGNORECASE) and re.search(
-            r"\b(?:posso|podemos)\b.{0,40}\b(?:iniciar|abrir|registrar)\b|"
-            r"\b(?:solicitar|emitir|gerar)\s+(?:a\s+)?etiqueta\b", answer,
-            re.IGNORECASE | re.DOTALL):
+    if unavailable("open_return") and re.search(r"devol|arrepend|troca", normalize(message)) and re.search(
+            r"(?<!nao )\b(?:posso|podemos|vou|vamos|consigo|farei|irei)\b.{0,50}"
+            r"\b(?:iniciar|abrir|registrar|solicitar|emitir|gerar)\b", normalized_answer):
         return "Não há ferramenta para iniciar a devolução nem emitir etiqueta. Explique a regra sem oferecer essa ação."
+    if unavailable("open_return") and re.search(r"devol|arrepend|troca", normalize(message)) and re.search(
+            r"\b(?:qual|informe|envie|(?<!nao )precis\w*)\b.{0,90}\b(?:e mail|email)\b",
+            normalized_answer):
+        return "Este chat não inicia devoluções. Não peça e-mail para uma ação que não pode executar."
+    if unavailable("open_return") and re.search(
+            r"\b(?:registr\w*|inici\w*|abr\w*|ger\w*|emit\w*)\b.{0,70}"
+            r"\b(?:devol\w*|etiqueta)\b", normalize(message)) and re.search(
+            r"\be\s*mail\b|\bemail\b", normalized_answer):
+        return "Esta aplicação não registra devoluções. Não peça e-mail nem descreva coleta de dados para iniciar essa ação."
+    if unavailable("open_return") and re.search(
+            r"\b(?:registr\w*|inici\w*|abr\w*|ger\w*|emit\w*)\b.{0,70}"
+            r"\b(?:devol\w*|etiqueta)\b", normalize(message)) and not re.search(
+            r"\bnao\b.{0,25}\b(?:consigo|posso|inici\w*|registr\w*|ger\w*|emit\w*|e possivel)\b",
+            normalize(answer)):
+        return "O cliente pediu uma ação indisponível. Diga explicitamente que este chat não registra devoluções nem emite etiquetas."
     if unavailable("open_return") and re.search(r"devol|arrepend|troca", message, re.IGNORECASE) and re.search(
             r"(?:ajuda\s+para|ajudar?\s+a)\s+iniciar.{0,30}devolu[cç][aã]o", answer,
             re.IGNORECASE | re.DOTALL):
@@ -187,6 +241,9 @@ def answer_issue(message: str, answer: str, tool_names=(), policy_facts: dict | 
             r"(?:pode\s+me\s+informar|me\s+informe|antes\s+de\s+encaminhar)", answer,
             re.IGNORECASE):
         return "Não colete dados pessoais nem prometa encaminhar a exclusão neste chat. Oriente a procurar a equipe humana."
+    if unavailable("contact_directory") and re.search(r"\b(?:site|portal|website)\b", normalized_answer) and re.search(
+            r"\b(?:canal|atendimento|contato|oficial)\b", normalized_answer):
+        return "Nenhum site oficial de atendimento foi confirmado. Oriente a equipe humana sem indicar um canal específico."
     if unavailable("contact_directory") and re.search(r"(?:exclu|apag).{0,20}dados|dados\s+pessoais", message,
                  re.IGNORECASE) and re.search(
             r"\b(?:visite|acesse|consulte|procure)\b.{0,35}\b(?:site|website|portal)\b|"
@@ -271,6 +328,21 @@ def promotion_listing_issue(message: str, answer: str, tool_results: list[dict])
     return None
 
 
+def order_lookup_issue(message: str, customer_messages: list[str],
+                       tool_results: list[dict]) -> str | None:
+    """When both identifiers were supplied, require a verified lookup attempt."""
+    if not (re.search(r"\b(?:pedido|status|rastre\w*)\b", normalize(message))
+            or re.search(r"[\w.+-]+@[\w.-]+\.[\w-]+", message)):
+        return None
+    conversation = "\n".join(customer_messages)
+    has_order = bool(re.search(r"\b(?:pedido|ordem|order|n[uú]mero)\b\D{0,28}\b\d+\b",
+                               conversation, re.IGNORECASE))
+    has_email = bool(re.search(r"[\w.+-]+@[\w.-]+\.[\w-]+", conversation))
+    if has_order and has_email and not any(item["name"] == "get_order" for item in tool_results):
+        return "O cliente já informou número e e-mail. Chame get_order antes de afirmar qualquer resultado ou pedir os dados outra vez."
+    return None
+
+
 def policy_evidence(store: Store, message: str, broad: bool = False,
                     followup: bool = False) -> tuple[str, list[str]]:
     """Retrieve structured policy evidence before either model is allowed to answer."""
@@ -311,6 +383,7 @@ class Agent:
         self.model = model
         self.instructions = agent_instructions(store)
         self.history = []
+        self.user_messages = []
         self.last_tools = []
         self.last_tool_results = []
         self.last_policy_request_was_broad = False
@@ -324,6 +397,7 @@ class Agent:
         self.last_policy_request_was_broad = broad
         feedback = ""
         # Keep history in process only; no customer messages written to disk.
+        self.user_messages = [*self.user_messages[-23:], message]
         self.history.append({"role": "user", "content": message})
         for _ in range(5):
             response = self.client.responses.create(model=self.model, instructions=self.instructions + "\n" + context + feedback,
@@ -332,9 +406,11 @@ class Agent:
             if not calls:
                 answer = response.output_text.strip() or "Não consegui responder agora. Procure a equipe da loja para confirmar."
                 issue = policy_access_issue(answer, sections) or promotion_listing_issue(
-                    message, answer, self.last_tool_results) or answer_issue(
+                    message, answer, self.last_tool_results) or order_lookup_issue(
+                    message, self.user_messages, self.last_tool_results) or answer_issue(
                     message, answer, self.last_tools, getattr(self.store, "policy_facts", None),
-                    getattr(self.store, "application_rules", None))
+                    getattr(self.store, "application_rules", None), self.user_messages,
+                    self.last_tool_results)
                 if issue:
                     feedback = "\nA resposta anterior foi rejeitada: " + issue
                     continue
@@ -345,7 +421,8 @@ class Agent:
             self.history.extend(item.model_dump(exclude_none=True) for item in response.output)
             for call in calls:
                 self.last_tools.append(call.name)
-                result = run_tool(self.store, call.name, call.arguments, message)
+                result = run_tool(self.store, call.name, call.arguments, message,
+                                  self.user_messages)
                 self.last_tool_results.append({"name": call.name, "result": json.loads(result)})
                 self.history.append({"type": "function_call_output", "call_id": call.call_id,
                                      "output": result})
@@ -362,6 +439,7 @@ class OllamaAgent:
         self.model = model
         self.think = think if think is not None else ("medium" if model.startswith("gpt-oss") else False)
         self.history = [{"role": "system", "content": agent_instructions(store)}]
+        self.user_messages = []
         self.last_tools = []
         self.last_tool_calls = []
         self.last_tool_results = []
@@ -383,6 +461,7 @@ class OllamaAgent:
         context, self.last_policy_sections = policy_evidence(self.store, message, broad=broad,
                                                              followup=followup)
         self.last_policy_request_was_broad = broad
+        self.user_messages = [*self.user_messages[-23:], message]
         self.history.append({"role": "user", "content": message})
         repair_messages = []
         for _ in range(5):
@@ -398,9 +477,11 @@ class OllamaAgent:
             if not calls:
                 answer = (reply.content or "").strip() or "Não consegui responder agora. Procure a equipe da loja para confirmar."
                 issue = policy_access_issue(answer, self.last_policy_sections) or promotion_listing_issue(
-                    message, answer, self.last_tool_results) or answer_issue(
+                    message, answer, self.last_tool_results) or order_lookup_issue(
+                    message, self.user_messages, self.last_tool_results) or answer_issue(
                     message, answer, self.last_tools, getattr(self.store, "policy_facts", None),
-                    getattr(self.store, "application_rules", None))
+                    getattr(self.store, "application_rules", None), self.user_messages,
+                    self.last_tool_results)
                 if issue:
                     self.last_rejections.append({"issue": issue, "answer": answer})
                     repair_messages = [{"role": "assistant", "content": answer},
@@ -417,7 +498,8 @@ class OllamaAgent:
                 self.last_tools.append(call.function.name)
                 self.last_tool_calls.append({"name": call.function.name,
                                              "arguments": call.function.arguments})
-                result = run_tool(self.store, call.function.name, call.function.arguments, message)
+                result = run_tool(self.store, call.function.name, call.function.arguments, message,
+                                  self.user_messages)
                 self.last_tool_results.append({"name": call.function.name,
                                                "result": json.loads(result)})
                 self.history.append({"role": "tool", "tool_call_id": call.id,

@@ -26,6 +26,7 @@ POLICY_INTENTS = (
     (r"\bparcel\w*|\b\d{1,2}\s*x\b", {"3.1"}),
     (r"\brastre\w*|\bcodigo\s+de\s+rastreamento\b", {"5.3"}),
     (r"\bfora\s+(?:de|da|do)\s+(?:campo\s+grande|regiao)|\boutras?\s+cidades?\b|\binterior\b", {"5.2"}),
+    (r"\bcotac\w*\s+de\s+frete\b|\bfrete\b.{0,100}\bcep\b", {"5.2"}),
 )
 
 
@@ -191,8 +192,18 @@ class Store:
         hinted_sections = {section for pattern, sections in POLICY_INTENTS
                            if re.search(pattern, normalized_topic)
                            for section in sections}
+        shipping_topic = bool(re.search(r"\b(?:frete|envio|entrega|transportadora|cotac\w*)\b",
+                                        normalized_topic))
+        return_topic = bool(re.search(r"\b(?:devol\w*|reembols\w*|retorno|arrepend\w*)\b",
+                                      normalized_topic))
+        address_topic = bool(re.search(r"\b(?:enderec\w*|rua|localiz\w*)\b|onde\s+fica",
+                                       normalized_topic))
         scored = []
         for item in self.policy_sections:
+            if shipping_topic and not return_topic and item["section"] == "4.1":
+                continue
+            if shipping_topic and not address_topic and item["section"] == "1.2":
+                continue
             title = re.findall(r"\w+", normalize(item["title"]))
             content = re.findall(r"\w+", normalize(item["text"]))
             keywords = [normalize(keyword) for keyword in item.get("keywords_pt", [])]

@@ -7,7 +7,8 @@ from unittest.mock import Mock, patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from agent import (Agent, OllamaAgent, answer_issue, default_application_rules,
                    default_policy_facts, is_broad_policy_request, is_policy_followup,
-                   policy_access_issue, policy_evidence, promotion_listing_issue)
+                   order_lookup_issue, policy_access_issue, policy_evidence,
+                   promotion_listing_issue)
 
 
 class FakeStore:
@@ -25,6 +26,14 @@ class AgentTests(unittest.TestCase):
         self.assertIsNotNone(answer_issue("Como apago meus dados?", "Ligue para (67) 3341-4444."))
         self.assertIsNotNone(answer_issue("Qual o frete?", "Posso ajudar a estimar o valor com seu CEP."))
         self.assertIsNotNone(answer_issue("Posso devolver?", "Posso ajudar a iniciar a devolução."))
+        self.assertIsNotNone(answer_issue("Registre a devolução do pedido 1.",
+            "Para iniciar a devolução preciso do e-mail da compra. Qual é o e-mail?"))
+        self.assertIsNotNone(answer_issue("Registre a devolução do pedido 1.",
+            "Não consigo registrar aqui. Informe o número do pedido e o e-mail para a equipe."))
+        self.assertIsNotNone(answer_issue("Registre a devolução do pedido 1.",
+            "A política permite devolver em até 7 dias corridos após o recebimento."))
+        self.assertIsNone(answer_issue("Registre a devolução do pedido 1 e gere a etiqueta.",
+            "Não consigo registrar devoluções nem gerar etiquetas neste chat. Procure a equipe humana."))
         self.assertIsNotNone(answer_issue("Quais violões?", "| Nome | Preço |\n|------|-------|"))
         self.assertIsNotNone(answer_issue("Qual o preço?", "**R$ 100,00**"))
         self.assertIsNotNone(answer_issue("meu@email.com", "Posso acompanhar a evolução do envio.",
@@ -48,6 +57,24 @@ class AgentTests(unittest.TestCase):
                                           "Se precisar de ajuda para iniciar a devolução, me avise!"))
         self.assertIsNotNone(answer_issue("Quanto sai o frete?",
                                           "Para estimar, basta informar o CEP e as dimensões."))
+        self.assertIsNotNone(answer_issue("Quanto sai o frete?",
+                                          "Já consultei a transportadora, mas não tenho preço exato."))
+        self.assertIsNotNone(answer_issue("Quanto sai o frete?",
+                                          "Fizemos uma consulta às transportadoras, mas falta o peso."))
+        self.assertIsNotNone(answer_issue("Quanto sai o frete?",
+                                          "Não consigo calcular o frete porque falta o peso do produto."))
+        self.assertIsNotNone(answer_issue("Faça uma cotação exata de frete.",
+                                          "Não consigo obter o preço exato porque faltam peso e dimensões."))
+        self.assertIsNotNone(answer_issue("Registre minha devolução.",
+                                          "Não consigo registrar aqui; use o site oficial para atendimento."))
+        self.assertIsNotNone(answer_issue("Meu violão deu defeito após 45 dias.",
+            "Depois desse prazo, o caso passa ao suporte do fabricante sob a garantia legal de 90 dias."))
+        self.assertIsNotNone(answer_issue("Meu violão deu defeito 45 dias após a compra.",
+            "A garantia legal cobre 90 dias após o recebimento, mas preciso confirmar com a equipe humana."))
+        self.assertIsNotNone(answer_issue("Meu violão deu defeito 45 dias após a compra.",
+            "A troca da loja é em 30 dias e a garantia legal é de 90 dias. Preciso confirmar com a equipe humana, mas você pode consultar o fabricante."))
+        self.assertIsNotNone(answer_issue("Meu violão deu defeito 45 dias após a compra.",
+            "A troca da loja é em 30 dias e a garantia legal é de 90 dias. Confirme com a equipe humana; se não resolver, o fabricante pode ser contatado."))
         self.assertIsNotNone(answer_issue("Como apago meus dados?",
                                           "Visite nosso site para os canais oficiais."))
         self.assertIsNotNone(answer_issue("Qual é a garantia?",
@@ -80,11 +107,13 @@ class AgentTests(unittest.TestCase):
         self.assertIsNotNone(answer_issue("O violão deu defeito 45 dias após a compra. Posso trocar?",
                                           "A troca não é possível; procure o fabricante."))
         self.assertIsNone(answer_issue("O violão deu defeito 45 dias após a compra. Posso trocar?",
-                                       "A equipe humana precisa confirmar a relação entre troca e garantia legal de 90 dias."))
+                                       "A troca da loja vale 30 dias após a compra. A equipe humana precisa confirmar a relação com a garantia legal de 90 dias."))
         self.assertIsNotNone(answer_issue("O violão deu defeito 45 dias após a compra. Posso trocar?",
                                           "A equipe humana precisa confirmar a troca após 30 dias."))
         self.assertIsNotNone(answer_issue("O violão deu defeito 45 dias após a compra. Posso trocar?",
                                           "O prazo de 31 a 90 dias requer confirmação; depois disso deve ser encaminhado ao fabricante."))
+        self.assertIsNotNone(answer_issue("O violão deu defeito 45 dias após a compra. Posso trocar?",
+                                          "A garantia legal é de 90 dias; a equipe deve confirmar. O melhor caminho agora é entrar em contato com o fabricante."))
         self.assertIsNotNone(answer_issue("Posso parcelar R$ 40,00 em 2x?",
                                           "Sim! Mas a equipe precisa confirmar."))
         self.assertIsNotNone(answer_issue("Posso parcelar R$ 40,00 em 2x?",
@@ -99,6 +128,14 @@ class AgentTests(unittest.TestCase):
                                           "Compras de até R$ 400 podem ser divididas em 5 vezes."))
         self.assertIsNone(answer_issue("Comprei online e me arrependi.",
                                        "A devolução pode ser feita em sete dias corridos."))
+        self.assertIsNone(answer_issue(
+            "Meu pedido 1 usa o e-mail buyer@example.com.",
+            "Não consegui verificar o pedido com buyer@example.com."))
+        self.assertIsNotNone(answer_issue(
+            "Meu pedido 1 usa o e-mail buyer@example.com.",
+            "Data de entrega: 25/10/2025.", tool_names=["get_order"],
+            tool_results=[{"name": "get_order", "result": {
+                "status": "delivered", "estimated_delivery": "2025-10-25"}}]))
     def test_ollama_consults_policy_then_returns_model_text(self):
         client = Mock()
         client.chat.completions.create.return_value = SimpleNamespace(
@@ -145,6 +182,13 @@ class AgentTests(unittest.TestCase):
         self.assertIsNone(promotion_listing_issue(question, "Crafter HT-100 e Ohana CK-20.", tools))
         self.assertIsNotNone(promotion_listing_issue(
             question, "Crafter HT-100 e Ohana CK-20 estão em promoção hoje.", tools))
+
+    def test_order_lookup_is_required_only_for_an_order_question(self):
+        messages = ["Meu pedido é 1.", "O e-mail é buyer@example.com."]
+        self.assertIsNotNone(order_lookup_issue(messages[-1], messages, []))
+        self.assertIsNone(order_lookup_issue("Quais violões existem?", messages, []))
+        self.assertIsNone(order_lookup_issue(messages[-1], messages,
+            [{"name": "get_order", "result": {"error": "Not found"}}]))
 
     def test_numeric_guard_uses_versioned_company_facts(self):
         facts = default_policy_facts()

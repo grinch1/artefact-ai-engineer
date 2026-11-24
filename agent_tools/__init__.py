@@ -15,7 +15,8 @@ HANDLERS = {
 }
 
 
-def run_tool(store, name: str, arguments: str, customer_message: str = "") -> str:
+def run_tool(store, name: str, arguments: str, customer_message: str = "",
+             customer_messages: list[str] | None = None) -> str:
     try:
         payload = json.loads(arguments)
         if not isinstance(payload, dict):
@@ -23,6 +24,8 @@ def run_tool(store, name: str, arguments: str, customer_message: str = "") -> st
         handler = HANDLERS.get(name)
         if name == "search_products":
             result = catalog.execute(store, payload, customer_message)
+        elif name == "get_order":
+            result = orders.execute(store, payload, customer_messages or [customer_message])
         else:
             result = handler(store, payload) if handler else {"error": "Unknown tool"}
         return json.dumps(result, ensure_ascii=False)

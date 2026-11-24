@@ -112,6 +112,16 @@ class StoreTests(unittest.TestCase):
             with self.subTest(question=question):
                 self.assertEqual(store.get_policy(question)["matches"][0]["section"], section)
 
+    def test_shipping_quote_does_not_retrieve_return_or_address_rules(self):
+        store = Store.__new__(Store)
+        policy = json.loads((Path(__file__).resolve().parents[1] / "policies.json").read_text())
+        store.policy_sections = policy["company_policies"]["sections"]
+        sections = [item["section"] for item in store.get_policy(
+            "Faça cotação de frete para São Paulo com CEP 01001-000")["matches"]]
+        self.assertEqual(sections[0], "5.2")
+        self.assertNotIn("4.1", sections)
+        self.assertNotIn("1.2", sections)
+
     def test_conflicting_manual_contacts_are_not_sent_to_model(self):
         text = "WhatsApp (67) 3341 - 4444 e contato@empóriodamusica.com.br"
         safe = customer_safe_policy_text(text)
